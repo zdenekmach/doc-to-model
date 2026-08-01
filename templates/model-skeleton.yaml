@@ -1,0 +1,88 @@
+# Kostra instance pro schema/analytical-doc.linkml.yaml
+# Nevyplněné sekce SMAŽ — prázdná sekce je poctivější než vymyšlená.
+
+id: DOC-001
+title: ""
+subtitle: ""
+version: "1.0.0"
+status: Draft            # Draft | Review | Approved | Superseded
+author: ""
+date: "YYYY-MM-DD"
+source_document: ""      # odkud model vznikl (cesta / název)
+regulations: []
+
+context: >
+  Proč dokument vznikl a co řeší.
+
+sources:
+  - id: S1
+    title: ""
+    locator: ""          # kapitola / paragraf / strana
+    # url: ""
+
+actors:
+  - id: A1
+    name: ""
+    role: ""
+    # kind: "systém | člověk | externí orgán"
+
+scope_in: []
+scope_out: []
+
+requirements:
+  - id: FR-01
+    title: ""
+    priority: MUST       # MUST | SHOULD | COULD | WONT — jen když to zdroj říká
+    description: ""
+    acceptance: []       # jen když zdroj kritérium má
+    actor: A1
+    source: S1
+    confidence: explicit # explicit | derived | assumed
+
+quality_requirements:
+  - id: NFR-01
+    category: ""         # výkon | dostupnost | auditovatelnost | bezpečnost…
+    requirement: ""
+    source: S1
+    confidence: explicit
+
+entities:
+  - id: E1
+    name: ""
+    description: ""
+    fields:
+      - name: ""
+        type: ""
+        required_field: true
+        note: ""
+
+process:
+  name: ""
+  steps:
+    - id: S1_STEP
+      type: start        # start | task | decision | end
+      label: ""
+      next: S2_STEP
+    - id: S2_STEP
+      type: task
+      actor: A1
+      label: ""          # sloveso na začátku
+      next: S3_STEP
+    - id: S3_STEP
+      type: decision
+      label: ""
+      branches:
+        - label: "Ano"
+          target: S4_STEP
+        - label: "Ne"
+          target: S2_STEP
+    - id: S4_STEP
+      type: end
+      label: ""
+
+risks:
+  - id: R1
+    description: ""
+    mitigation: ""
+
+open_questions: []       # co zdroj nezodpovídá

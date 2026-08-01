@@ -1,0 +1,318 @@
+id: https://machacek.consulting/schema/analytical-doc
+name: analytical-doc
+title: Analytický dokument jako strukturovaná pravda
+description: >-
+  Schéma pro převod analytického dokumentu (požadavková specifikace, procesní
+  analýza, výklad předpisu, zadání změny) na jednu validovatelnou instanci
+  strukturované pravdy. Z instance se deterministicky emituje dokument, diagram
+  a kontext pro AI. Každé tvrzení nese odkaz na místo ve zdroji (Source), aby
+  byla extrakce trasovatelná zpět.
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  adoc: https://machacek.consulting/schema/analytical-doc/
+default_prefix: adoc
+default_range: string
+imports:
+  - linkml:types
+
+# ─────────────────────────────────────────────────────────────────────────
+# ENUMY
+# ─────────────────────────────────────────────────────────────────────────
+enums:
+  Priority:
+    description: Priorita požadavku (MoSCoW).
+    permissible_values:
+      MUST:
+      SHOULD:
+      COULD:
+      WONT:
+
+  StepType:
+    description: Typ kroku procesu.
+    permissible_values:
+      start:
+      task:
+      decision:
+      end:
+
+  DocStatus:
+    permissible_values:
+      Draft:
+      Review:
+      Approved:
+      Superseded:
+
+  ClaimType:
+    description: >-
+      Druh tvrzení. Nese jinou míru ověřitelnosti: fakt se dá dohledat, výklad
+      je něčí čtení, predikce se ověřit nedá vůbec.
+    permissible_values:
+      fakt:
+      výklad:
+      predikce:
+      definice:
+
+  Confidence:
+    description: >-
+      Jak jistá je extrakce daného prvku ze zdroje. explicit = ve zdroji
+      doslova; derived = odvozeno kombinací více míst; assumed = doplněno,
+      ve zdroji chybí (musí se ověřit s autorem).
+    permissible_values:
+      explicit:
+      derived:
+      assumed:
+
+# ─────────────────────────────────────────────────────────────────────────
+# TŘÍDY
+# ─────────────────────────────────────────────────────────────────────────
+classes:
+
+  Document:
+    description: Kořen — jeden analytický dokument převedený na strukturovanou pravdu.
+    tree_root: true
+    attributes:
+      id:
+        identifier: true
+        description: Identifikátor dokumentu (např. RS-JMHZ-001).
+      title:
+        required: true
+      subtitle:
+      version:
+      status:
+        range: DocStatus
+      author:
+      date:
+      source_document:
+        description: Odkud instance vznikla — cesta nebo název původního dokumentu.
+      regulations:
+        multivalued: true
+        description: Předpisy, ze kterých požadavky plynou.
+      context:
+        description: Souvislost — proč dokument vznikl a co řeší.
+      sources:
+        range: Source
+        multivalued: true
+        inlined_as_list: true
+      actors:
+        range: Actor
+        multivalued: true
+        inlined_as_list: true
+      scope_in:
+        multivalued: true
+        description: Co je v rozsahu.
+      scope_out:
+        multivalued: true
+        description: Co je mimo rozsah.
+      claims:
+        range: Claim
+        multivalued: true
+        inlined_as_list: true
+        description: >-
+          Co dokument tvrdí o světě. Oddělené od požadavků záměrně — jeden
+          dokument běžně nese obojí a rozlišení patří na výrok, ne na dokument.
+      requirements:
+        range: Requirement
+        multivalued: true
+        inlined_as_list: true
+      quality_requirements:
+        range: QualityRequirement
+        multivalued: true
+        inlined_as_list: true
+      entities:
+        range: DataEntity
+        multivalued: true
+        inlined_as_list: true
+      process:
+        range: Process
+        inlined: true
+      risks:
+        range: Risk
+        multivalued: true
+        inlined_as_list: true
+      open_questions:
+        multivalued: true
+        description: Co zdroj nezodpovídá a musí doplnit člověk.
+
+  Source:
+    description: Místo ve zdrojovém dokumentu, na které se dá odkázat.
+    attributes:
+      id:
+        identifier: true
+      title:
+        required: true
+        description: Název zdroje nebo jeho části.
+      locator:
+        description: Kapitola, paragraf, strana, odstavec.
+      url:
+
+  Actor:
+    description: Kdo v procesu figuruje (role, systém, orgán).
+    attributes:
+      id:
+        identifier: true
+      name:
+        required: true
+      role:
+      kind:
+        description: Např. člověk, systém, externí orgán.
+
+  Statement:
+    abstract: true
+    description: >-
+      Jeden výrok vytažený z dokumentu. Rozlišuje se na požadavek (co se má stát)
+      a tvrzení (jak to je). Společné je jim to, co dělá extrakci ověřitelnou:
+      identita, odkaz do zdroje a míra jistoty.
+    attributes:
+      id:
+        identifier: true
+      title:
+        required: true
+      description:
+      source:
+        range: Source
+        description: Odkud ve zdroji výrok pochází.
+      confidence:
+        range: Confidence
+
+  Requirement:
+    is_a: Statement
+    description: Funkční požadavek — co má systém nebo proces umět.
+    attributes:
+      priority:
+        range: Priority
+      acceptance:
+        multivalued: true
+        description: Akceptační kritéria — podle čeho se pozná, že je hotovo.
+      actor:
+        range: Actor
+        description: Kdo požadavek naplňuje.
+      justified_by:
+        range: Claim
+        multivalued: true
+        description: >-
+          Tvrzení, ze kterých požadavek plyne. Odpověď na otázku „proč to děláme".
+          Nepovinné — ale kde je vyplněné, dá se odůvodnění ověřit stejně jako
+          všechno ostatní, protože tvrzení samo nese zdroj a míru jistoty.
+
+  Claim:
+    is_a: Statement
+    description: >-
+      Tvrzení o tom, jak se věci mají. Nepředjímá pravdivost — model ověřuje jen
+      oporu v citovaném místě, ne shodu se skutečností.
+    attributes:
+      claim_type:
+        range: ClaimType
+        description: Jaká míra ověřitelnosti se od výroku dá čekat.
+      basis:
+        description: >-
+          O co se tvrzení opírá podle zdroje (měření, odkaz na jiný předpis,
+          stanovisko). Volný text — strukturu má smysl přidat, až se ukáže,
+          že ji někdo vyplňuje.
+      subject:
+        description: Čeho se tvrzení týká.
+      predicate:
+        description: Co se o subjektu tvrdí (např. „trvání", „počet", „dostupnost").
+      value:
+        description: Hodnota tvrzení tak, jak ji uvádí zdroj (např. „612 loci").
+      value_num:
+        range: float
+        description: Číselná část hodnoty, když ji tvrzení má. Umožní porovnání.
+      unit:
+        description: Jednotka hodnoty (den, procento, locus…).
+      condition:
+        description: Za jaké podmínky tvrzení platí.
+      scope:
+        description: >-
+          Rozsah platnosti tvrzení. Chrání před falešnými rozpory — dvě různé
+          hodnoty téhož predikátu si neodporují, pokud platí pro jiný rozsah.
+
+  QualityRequirement:
+    description: Nefunkční požadavek (výkon, dostupnost, auditovatelnost, bezpečnost).
+    attributes:
+      id:
+        identifier: true
+      category:
+        required: true
+      requirement:
+        required: true
+      source:
+        range: Source
+      confidence:
+        range: Confidence
+
+  DataEntity:
+    description: Datová entita, kterou dokument popisuje.
+    attributes:
+      id:
+        identifier: true
+      name:
+        required: true
+      description:
+      fields:
+        range: Field
+        multivalued: true
+        inlined_as_list: true
+
+  Field:
+    description: Atribut datové entity.
+    attributes:
+      name:
+        identifier: true
+      type:
+      required_field:
+        range: boolean
+        description: Je pole povinné.
+      note:
+
+  Process:
+    description: Procesní tok popsaný v dokumentu.
+    attributes:
+      name:
+        required: true
+      steps:
+        range: ProcessStep
+        multivalued: true
+        inlined_as_list: true
+
+  ProcessStep:
+    description: Jeden krok procesu. Zdroj pro diagram.
+    attributes:
+      id:
+        identifier: true
+      type:
+        range: StepType
+        required: true
+      label:
+        required: true
+      actor:
+        range: Actor
+      next:
+        range: ProcessStep
+        description: Následující krok (mimo rozhodnutí).
+      branches:
+        range: Branch
+        multivalued: true
+        inlined_as_list: true
+        description: Větve rozhodnutí.
+      source:
+        range: Source
+
+  Branch:
+    description: Větev rozhodovacího kroku.
+    attributes:
+      label:
+        required: true
+      target:
+        range: ProcessStep
+        required: true
+
+  Risk:
+    attributes:
+      id:
+        identifier: true
+      description:
+        required: true
+      mitigation:
+      source:
+        range: Source

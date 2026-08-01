@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Stav řetězu je odvozený z modelu — patří k běhu, ne do historie.
+*.state.json
+
+# Zdrojové dokumenty se neverzují — jsou to cizí texty, ne naše práce.
+# Výřez AI Actu si vyrobí `python3 utils/build-vyrez.py` z EUR-Lexu.
+inputs/
+
+# Projekce se neverzují — regenerují se. Je to celá pointa tohohle repozitáře.
+# `bash scripts/build.sh <model.yaml>` je vyrobí znovu za pár sekund.
+model/*/out/
+model/*/*-opora.md
