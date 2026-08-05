@@ -35,7 +35,7 @@ Plné znění pravidel extrakce s příklady:
 Potřeba je Python 3.11+ a balíčky z `requirements.txt`. Ověř si to takhle:
 
 ```bash
-python3 -c "import yaml, docx, linkml_runtime" && which linkml-validate
+python3 -c "import yaml, docx, pypdf, linkml_runtime" && which linkml-validate
 ```
 
 Když to projde, nic dalšího nezařizuj — balíčky už v systému jsou.
@@ -47,6 +47,12 @@ Když to spadne, doinstaluj je. Virtuální prostředí je doporučení, ne podm
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+**Na Windows nahraď `python3` za `py -3`** (nebo za `python`, když už běžíš
+v aktivovaném `.venv`). `python3` tam neexistuje ani v prostředí — Windows na
+ten název váže zástupce Microsoft Store, takže se místo chyby otevře obchod.
+Aktivace vede přes `.venv/Scripts/activate`, ne `bin`. A `build.sh` je bashový
+skript, takže potřebuje Git Bash nebo WSL.
 
 Spouštěj z kořene repozitáře. Celý řetěz za extrakcí jedním příkazem:
 

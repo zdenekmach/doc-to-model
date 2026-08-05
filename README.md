@@ -32,13 +32,32 @@ Potřeba je **Python 3.11 nebo novější** a pět balíčků z `requirements.tx
 Zkratka přes celý řetěz (`build.sh`) je navíc bashový skript — na Windows tedy
 Git Bash nebo WSL, nativní `cmd` ani PowerShell ho nespustí.
 
-Nejdřív si ověř, jestli něco instalovat vůbec musíš:
+Nejdřív si ověř, jestli něco instalovat vůbec musíš.
+
+Na macOS a Linuxu:
 
 ```bash
 python3 -c "import yaml, docx, pypdf, linkml_runtime" && which linkml-validate
 ```
 
+Na Windows totéž, ale příkazem `py -3`:
+
+```bash
+py -3 -c "import yaml, docx, pypdf, linkml_runtime" && which linkml-validate
+```
+
 Když oba příkazy projdou, máš hotovo a zbytek téhle sekce přeskoč.
+
+> **Na Windows nepoužívej `python3`, a to nikde v tomhle repozitáři.**
+> Instalátor z python.org registruje `python` a launcher `py`, nikoli `python3`.
+> Windows navíc na `python3` váže zástupce Microsoft Store, takže se místo chyby
+> otevře obchod — a to vypadá jako úplně jiný problém, než jaký nastal.
+>
+> Nepomůže ani virtuální prostředí: `venv` na Windows zakládá `python.exe`,
+> `python3.exe` ne.
+>
+> Všude, kde je v příkazech `python3`, si tedy dosaď **`python`** (v aktivovaném
+> `.venv`) nebo **`py -3`** (bez něj).
 
 ### macOS
 
@@ -62,22 +81,28 @@ V Git Bash:
 ```bash
 git clone https://github.com/zdenekmach/doc-to-model.git
 cd doc-to-model
-python -m venv .venv && source .venv/Scripts/activate
+py -3 -m venv .venv && source .venv/Scripts/activate
 pip install -r requirements.txt
 ```
 
-Pozor na dva rozdíly proti macOS: příkaz je `python`, ne `python3`, a aktivace
+Dva rozdíly proti macOS: Python se volá `py -3` (viz poznámka výše), a aktivace
 vede přes `Scripts`, ne `bin`.
+
+Po aktivaci prostředí už `python` míří dovnitř `.venv` a chová se stejně jako
+na macOS — rozdíl se týká jen příkazů, které pouštíš předtím.
 
 ### Ověření
 
+S aktivovaným prostředím platí obojí stejně:
+
 ```bash
 linkml-validate --help     # strukturální validace; bez něj se přeskočí a řekne to nahlas
-python3 -m pytest .github/skills/doc-to-model/scripts/ -q    # 16 testů; potřebuje pytest
+python -m pytest .github/skills/doc-to-model/scripts/ -q    # 16 testů; potřebuje pytest
 ```
 
 Virtuální prostředí je doporučení, ne podmínka. Když balíčky nainstaluješ
 globálně, funguje to taky — `.venv` jen drží verze stranou od zbytku systému.
+Bez něj ale na Windows zůstaň u `py -3` místo `python`.
 
 ## Spuštění z GitHub Copilot CLI
 
