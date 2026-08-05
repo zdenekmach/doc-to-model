@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.14.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.15.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -306,9 +306,20 @@ od nejhrubší po nejcennější:
 | Nepokrytá místa | segment zdroje, na který neukazuje žádný `source` |
 | **Osiřelá čísla** | číslo ve zdroji, které není v žádném výroku |
 | Nepokryté normativní věty | věta s „musí / nesmí / má právo", jejíž slova v modelu nejsou |
+| **Necitované zdroje** | místo, které model deklaroval a pak na něj neukázal |
 
-Osiřelá čísla jsou nejsilnější signál. Lhůta, částka a počet jsou to nejdražší,
-co se dá při extrakci ztratit, a zároveň to, co se očima kontroluje nejhůř.
+Osiřelá čísla jsou nejsilnější signál toho, co se ztratilo. Lhůta, částka a počet
+jsou to nejdražší, co se dá při extrakci ztratit, a zároveň to, co se očima
+kontroluje nejhůř.
+
+**Necitované zdroje jsou jediná binární metrika.** První tři stojí na překryvu
+slov, takže kapitolu, o které model jen mluví, započítají jako pokrytou. Tahle
+se ptá na doložitelnou vazbu: ukazuje na to místo nějaký výrok? Ošidit se nedá.
+
+Zavést místo a necitovat ho je totéž jako odepsat ho, jen bez zapsaného důvodu.
+Buď doplň výrok, nebo zdroj z modelu odstraň. Reálný běh: model se 69 zdroji
+citoval 33 z nich, a ostatní metriky přitom hlásily 88% pokrytí — polovina
+citací byla naprázdno a nikdo by si toho nevšiml.
 
 #### Jazyk zdroje
 

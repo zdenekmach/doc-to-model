@@ -20,6 +20,10 @@ Tři metriky, od nejhrubší po nejcennější:
    částka a počet jsou to nejdražší, co se dá při extrakci ztratit.
 3. **Nepokryté normativní věty** — věta s „musí / nesmí / má právo…", jejíž
    slova se v žádném výroku neobjevila. Nejblíž tomu, na co se ptá člověk.
+4. **Necitované zdroje** — místo, které model deklaroval a pak na něj neukázal
+   žádným výrokem. Jediná binární metrika: ostatní tři stojí na překryvu slov,
+   takže kapitolu, o které model jen mluví, započítají jako pokrytou. Tahle se
+   ptá na doložitelnou vazbu a ošidit se nedá.
 
 **Není to brána.** Legitimní extrakce běžně vynechá preambuli nebo přechodná
 ustanovení, takže tvrdé blokování by lidi natlačilo na `--strict`-off a shodilo
@@ -166,6 +170,39 @@ def uncovered_places(lines, model_sources, waived):
     return out, len(segs), skipped
 
 
+def uncited_sources(m, lines, waived):
+    """Zdroje deklarované v modelu, na které neukazuje žádný výrok.
+
+    Nejtvrdší z metrik pokrytí a jediná binární. Ostatní stojí na překryvu slov,
+    takže kapitolu, o které model jen mluví, započítají jako pokrytou. Tahle se
+    ptá na doložitelnou vazbu: existuje výrok s `source: S12`?
+
+    Zavést místo a necitovat ho je totéž jako odepsat ho — jen bez zapsaného
+    důvodu. Naměřeno na reálném běhu: model s 69 zdroji citoval 33 z nich a
+    ostatní metriky přitom hlásily 88% pokrytí.
+    """
+    src = {s["id"]: s for s in (m.get("sources") or []) if "id" in s}
+    used = {
+        it.get("source")
+        for coll in ("claims", "requirements", "quality_requirements")
+        for it in (m.get(coll) or [])
+        if it.get("source")
+    }
+    anchors = anchor_sources(lines, src)
+
+    out, skipped = [], 0
+    for sid, meta in src.items():
+        if sid in used:
+            continue
+        line = anchors.get(sid)
+        if line is not None and is_waived(line, waived):
+            skipped += 1
+            continue
+        out.append({"id": sid, "locator": meta.get("locator", ""),
+                    "title": meta.get("title", ""), "line": line})
+    return out, len(src), skipped
+
+
 def orphan_numbers(bloks, model_numbers, waived):
     """Čísla ve zdroji, která se do žádného výroku nedostala."""
     out, skipped = [], 0
@@ -216,7 +253,8 @@ def coverage_stats(total_places, places, waived_places):
 
 
 def render(m, places, total_places, numbers, norms, short, statements,
-           waived_places, waived_total, dangling, norms_seen, pack_note):
+           waived_places, waived_total, dangling, norms_seen, pack_note,
+           uncited, total_sources):
     covered, pct = coverage_stats(total_places, places, waived_places)
 
     out = [f"# Pokrytí zdroje modelem — {m.get('title', '')}", ""]
@@ -232,6 +270,7 @@ def render(m, places, total_places, numbers, norms, short, statements,
         summary += f" · **odepsáno:** {waived_places}"
     summary += (f" · **osiřelá čísla:** {len(numbers)} · "
                 f"**nepokryté normativní věty:** {len(norms)} z {norms_seen} nalezených · "
+                f"**necitované zdroje:** {len(uncited)} z {total_sources} · "
                 f"**výroků v modelu:** {statements}")
     out.append(summary)
     out.append("")
@@ -328,16 +367,17 @@ def main():
     places, total_places, w_places = uncovered_places(lines, model_sources, waived)
     orphans, w_nums = orphan_numbers(bloks, numbers, waived)
     norms, short, w_norms, norms_seen = uncovered_norms(bloks, words, waived)
-    waived_total = w_places + w_nums + w_norms
+    uncited, total_sources, w_uncited = uncited_sources(m, lines, waived)
+    waived_total = w_places + w_nums + w_norms + w_uncited
 
     out = args.out or args.model.with_name(args.model.stem + "-pokryti.md")
     out.write_text(render(m, places, total_places, orphans, norms, short,
                           statements, w_places, waived_total, dangling,
-                          norms_seen, how),
+                          norms_seen, how, uncited, total_sources),
                    encoding="utf-8")
 
     covered, pct = coverage_stats(total_places, places, w_places)
-    findings = len(places) + len(orphans) + len(norms)
+    findings = len(places) + len(orphans) + len(norms) + len(uncited)
 
     if args.json:
         print(json.dumps({
@@ -345,6 +385,8 @@ def main():
                        "waived": w_places, "uncovered": places},
             "orphan_numbers": orphans,
             "uncovered_norms": norms,
+            "uncited_sources": uncited,
+            "sources_total": total_sources,
             "waived": waived_total,
             "dangling_waivers": dangling,
             "skipped_short": short,
@@ -354,7 +396,8 @@ def main():
         waived_note = f" · odepsáno {w_places}" if w_places else ""
         print(f"[pokrytí] místa {covered}/{total_places} ({pct:.0f} %){waived_note} · "
               f"osiřelá čísla {len(orphans)} · "
-              f"normativní věty {len(norms)}/{norms_seen} → {out}")
+              f"normativní věty {len(norms)}/{norms_seen} · "
+              f"necitované zdroje {len(uncited)}/{total_sources} → {out}")
         for o in orphans[:5]:
             print(f"  ✗ číslo {', '.join(o['numbers'])}: {o['sentence'][:70]}")
         for n in norms[:5]:
@@ -373,6 +416,7 @@ def main():
     record(args.model, "coverage-check", ok=(findings == 0 or not args.strict),
            detail={"places_total": total_places, "places_covered": covered,
                    "orphan_numbers": len(orphans), "uncovered_norms": len(norms),
+                   "uncited_sources": len(uncited), "sources_total": total_sources,
                    "waived": waived_total, "dangling_waivers": len(dangling)})
 
     if findings and args.strict:

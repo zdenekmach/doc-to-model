@@ -79,3 +79,35 @@ def test_okno_konci_dalsim_zakotvenym_mistem():
 def test_prah_brany_je_definovany():
     import ground_check
     assert 0.0 < ground_check.ANCHOR_MIN_RATIO <= 1.0
+
+
+def test_necitovany_zdroj_se_najde():
+    """Zdroj deklarovaný a nepoužitý žádným výrokem je nález.
+
+    Ostatní metriky pokrytí stojí na překryvu slov, takže tenhle případ pustí.
+    Reálně: model s 69 zdroji citoval 33 a pokrytí přitom hlásilo 88 %.
+    """
+    import coverage_check
+
+    m = {
+        "sources": [
+            {"id": "S1", "locator": "A sparse annotation layer"},
+            {"id": "S2", "locator": "Root cause"},
+        ],
+        "requirements": [{"id": "FR-01", "title": "X", "source": "S1"}],
+    }
+    uncited, total, skipped = coverage_check.uncited_sources(m, ZDROJ, [])
+    assert total == 2
+    assert [u["id"] for u in uncited] == ["S2"]
+    assert skipped == 0
+
+
+def test_vsechny_zdroje_citovane_neni_nalez():
+    import coverage_check
+
+    m = {
+        "sources": [{"id": "S1", "locator": "Root cause"}],
+        "claims": [{"id": "T1", "title": "X", "source": "S1"}],
+    }
+    uncited, total, _ = coverage_check.uncited_sources(m, ZDROJ, [])
+    assert total == 1 and uncited == []
