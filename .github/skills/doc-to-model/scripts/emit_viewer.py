@@ -426,6 +426,8 @@ def main():
     require(args.model, ["validate"], "emit")
     warn_if_missing(args.model, "ground-check",
                     "prohlížeč může ukazovat tvrzení bez opory ve zdroji")
+    warn_if_missing(args.model, "coverage-check",
+                    "prohlížeč nedá poznat, kolik zdroje se do modelu nedostalo")
 
     m = load(args.model)
     sources = by_id(m.get("sources"))

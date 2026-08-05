@@ -279,6 +279,8 @@ def main():
     require(args.model, ["validate"], "emit")
     warn_if_missing(args.model, "ground-check",
                     "výstup může nést tvrzení bez opory ve zdroji")
+    warn_if_missing(args.model, "coverage-check",
+                    "výřez se skládá jen z toho, co model zachytil")
 
     m = load(args.model)
 

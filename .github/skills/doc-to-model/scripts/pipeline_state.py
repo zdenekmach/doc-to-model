@@ -58,15 +58,33 @@ def passed(model: Path, step: str) -> bool:
     return bool(st.get("steps", {}).get(step, {}).get("ok"))
 
 
+def status(model: Path, step: str) -> str:
+    """`ok` | `failed` | `missing`.
+
+    „Neproběhlo" a „proběhlo a neprošlo" se musí dát rozlišit. Splynout do
+    jedné hlášky znamená poradit člověku, ať krok spustí — zrovna když ho
+    spustil a krok mu něco řekl.
+    """
+    st = load(model)
+    if st.get("model_hash") != model_hash(model):
+        return "missing"
+    rec = st.get("steps", {}).get(step)
+    if rec is None:
+        return "missing"
+    return "ok" if rec.get("ok") else "failed"
+
+
 def warn_if_missing(model: Path, step: str, why: str):
-    """Měkké upozornění — krok chybí, ale zastavovat kvůli tomu by bylo přísné.
+    """Měkké upozornění — krok chybí nebo neprošel, ale zastavovat by bylo přísné.
 
     Tiché přeskočení by ale bylo horší: artefakt vypadá stejně důvěryhodně,
     ať kontrola proběhla nebo ne.
     """
-    if not passed(model, step):
-        print(f"[POZOR] {step} neproběhl nad touto verzí modelu — {why}",
-              file=sys.stderr)
+    s = status(model, step)
+    if s == "ok":
+        return
+    co = "neprošel" if s == "failed" else "neproběhl nad touto verzí modelu"
+    print(f"[POZOR] {step} {co} — {why}", file=sys.stderr)
 
 
 def require(model: Path, steps, current: str):

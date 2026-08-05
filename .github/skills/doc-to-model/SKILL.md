@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.15.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.16.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -298,28 +298,48 @@ Bez něj emitory poběží, ale nahlas upozorní, že výstup nemá ověřenou o
 python3 scripts/coverage_check.py --model model.yaml --source zdroj.txt
 ```
 
-Druhá postpodmínka extrakce, opačným směrem než kontrola opory. Tři metriky
-od nejhrubší po nejcennější:
+Druhá postpodmínka extrakce, opačným směrem než kontrola opory. Čtyři metriky
+ve dvou skupinách podle toho, jestli můžou lhát:
 
-| Metrika | Co hlásí |
-|---------|----------|
-| Nepokrytá místa | segment zdroje, na který neukazuje žádný `source` |
-| **Osiřelá čísla** | číslo ve zdroji, které není v žádném výroku |
-| Nepokryté normativní věty | věta s „musí / nesmí / má právo", jejíž slova v modelu nejsou |
-| **Necitované zdroje** | místo, které model deklaroval a pak na něj neukázal |
+| Metrika | Co hlásí | Povaha |
+|---------|----------|--------|
+| **Nepokrytá místa** | segment zdroje, do kterého neukazuje žádný **citovaný** `source` | binární |
+| **Necitované zdroje** | zdroj, který model deklaroval a pak na něj neukázal výrokem | binární |
+| Osiřelá čísla | číslo ve zdroji, které není v žádném výroku | slovní překryv |
+| Nepokryté normativní věty | věta s „musí / nesmí / má právo", jejíž slova v modelu nejsou | slovní překryv |
 
 Osiřelá čísla jsou nejsilnější signál toho, co se ztratilo. Lhůta, částka a počet
 jsou to nejdražší, co se dá při extrakci ztratit, a zároveň to, co se očima
-kontroluje nejhůř.
+kontroluje nejhůř. Falešný poplach u nich ale je běžný, takže jen varují.
 
-**Necitované zdroje jsou jediná binární metrika.** První tři stojí na překryvu
-slov, takže kapitolu, o které model jen mluví, započítají jako pokrytou. Tahle
-se ptá na doložitelnou vazbu: ukazuje na to místo nějaký výrok? Ošidit se nedá.
+**Binární metriky ošidit nejde a proto zapisují do stavu `ok: false`** i bez
+`--strict`. Buď na místo ukazuje výrok, nebo ne — o tom se nedá vést spor.
+Legitimně vynechanou preambuli odepiš přes `coverage_waivers` s důvodem; waiver
+je zapsané rozhodnutí, kdežto tolerance v kódu je rozhodnutí, které nikdo
+neudělal. Skript i tak doběhne, ale emitory na neprošlý coverage-check nahlas
+upozorní.
+
+<gate severity="BLOCKER">
+Slovo **citovaný** u nepokrytých míst je to podstatné. Seznam `sources` vyrábí
+`segment.py` — je to výstup skriptu, ne tvoje práce. Kdyby pokrytí stačilo
+deklarovaný zdroj, rostlo by s poslušností opisu a klesalo by s počtem výroků.
+
+Naměřeno nad týmž dokumentem, než se to opravilo:
+
+| Běh | Výroků | Citovaných zdrojů | Hlásilo pokrytí |
+|-----|-------:|------------------:|----------------:|
+| Claude Code | 105 | 65/65 | 80 % |
+| Copilot / Haiku 4.5 | 50 | 33/69 | 88 % |
+| Copilot / GPT-5 mini | 14 | 14/76 | **100 %** |
+
+Nejmělčí extrakce měla nejvyšší známku. Po opravě má 18 %.
+</gate>
 
 Zavést místo a necitovat ho je totéž jako odepsat ho, jen bez zapsaného důvodu.
-Buď doplň výrok, nebo zdroj z modelu odstraň. Reálný běh: model se 69 zdroji
-citoval 33 z nich, a ostatní metriky přitom hlásily 88% pokrytí — polovina
-citací byla naprázdno a nikdo by si toho nevšiml.
+Buď doplň výrok, nebo zdroj z modelu odstraň.
+
+Ke každému běhu se vypisuje **hustota** — kolik výroků připadá na jedno místo.
+Sto procent při 0,18 výroku na místo je jiná zpráva než sto procent při 1,38.
 
 #### Jazyk zdroje
 
@@ -354,9 +374,9 @@ rozlišení si za tři měsíce nebudeš jistý, čemu ta čísla odpovídají.
 
 Hranice slova doplňuje loader kolem celé skupiny sám — do vzorů je nepiš.
 
-**Neblokuje.** Preambule, definice pojmů nebo přechodná ustanovení zůstávají
-nepokryté zcela legitimně, takže tvrdá brána by lidi natlačila na vypínač a
-shodila i nálezy, které stojí za pohled. `--strict` existuje pro evals.
+**Neukončí běh chybou** (bez `--strict`), aby šlo řetěz dojet a podívat se na
+výstup. Binární nálezy ale zapíše do stavu jako neprošlé a emitory to zopakují.
+`--strict` navíc povyšuje i nálezy ze slovního překryvu a existuje pro evals.
 
 #### Doplňovací smyčka
 

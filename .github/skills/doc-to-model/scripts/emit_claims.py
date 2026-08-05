@@ -82,6 +82,8 @@ def main():
     require(args.model, ["validate"], "emit")
     warn_if_missing(args.model, "ground-check",
                     "tvrzení mohou nemít oporu ve zdroji")
+    warn_if_missing(args.model, "coverage-check",
+                    "kontrola rozporů uvidí jen tvrzení, která model vytáhl")
 
     m = load(args.model)
     sources = {s["id"]: s for s in (m.get("sources") or []) if "id" in s}

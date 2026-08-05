@@ -14,7 +14,7 @@ inputs/
 # Projekce se neverzují — regenerují se. Je to celá pointa tohohle repozitáře.
 # `bash build.sh <model.yaml>` je vyrobí znovu za pár sekund.
 out/
-model/*/out/
-model/*/outputs/
-model/*/*-opora.md
-model/*/*-pokryti.md
+
+# Modely z běhů jsou lokální. Do historie patří jen model, který někdo prošel
+# a chce ho ukázat jako příklad — ten se přidá přes `git add -f`.
+model/

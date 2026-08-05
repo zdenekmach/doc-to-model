@@ -12,10 +12,14 @@ je doložené. Proto ta druhá kontrola musí číst zdroj, ne model.
 
     python3 coverage_check.py --model model.yaml --source zdroj.txt [--json] [--strict]
 
-Tři metriky, od nejhrubší po nejcennější:
+Čtyři metriky, od nejhrubší po nejcennější:
 
-1. **Nepokrytá místa** — segment zdroje, na který neukazuje žádný `source`.
-   Levné a hrubé: kapitola citovaná jediným požadavkem se počítá jako pokrytá.
+1. **Nepokrytá místa** — segment zdroje, do kterého neukazuje žádný **citovaný**
+   zdroj. Hrubé v tom, že kapitola citovaná jediným požadavkem už je pokrytá.
+   Slovo „citovaný" tam ale musí být: kdyby stačil deklarovaný zdroj, metrika
+   by měřila `segment.py` (to je skript) a vydávala to za výsledek extrakce
+   (to je model). Naměřeno: model se 76 zdroji a 14 výroky hlásil 100 % pokrytí
+   — nejvyšší ze tří běhů nad týmž dokumentem, protože opsal nejvíc segmentů.
 2. **Osiřelá čísla** — číslo ve zdroji, které není v žádném výroku. Lhůta,
    částka a počet jsou to nejdražší, co se dá při extrakci ztratit.
 3. **Nepokryté normativní věty** — věta s „musí / nesmí / má právo…", jejíž
@@ -25,10 +29,18 @@ Tři metriky, od nejhrubší po nejcennější:
    takže kapitolu, o které model jen mluví, započítají jako pokrytou. Tahle se
    ptá na doložitelnou vazbu a ošidit se nedá.
 
-**Není to brána.** Legitimní extrakce běžně vynechá preambuli nebo přechodná
-ustanovení, takže tvrdé blokování by lidi natlačilo na `--strict`-off a shodilo
-i nálezy, které stojí za pohled. Report se čte, nezavírá cestu. `--strict`
-existuje pro evals, kde je pokrytí regresní metrika.
+**Nálezy se dělí podle toho, jestli můžou lhát.** Osiřelá čísla a normativní
+věty stojí na překryvu slov, takže falešný nález je běžný — ty jen varují a
+tvrdě je bere až `--strict` (pro evals, kde je pokrytí regresní metrika).
+Nepokrytá místa a necitované zdroje jsou binární a falešný nález mít nemůžou:
+buď na místo ukazuje výrok, nebo ne. Ty zapisují do stavu `ok: false` vždycky,
+i bez `--strict`. Legitimní vynechaná preambule se odepíše přes
+`coverage_waivers` — waiver je zapsané rozhodnutí, kdežto tolerance v kódu
+je rozhodnutí, které nikdo neudělal.
+
+Skript ani tak neskončí chybou (bez `--strict`), aby šlo dojet řetěz a podívat
+se na výstup. Emitory si ale `coverage-check` v stavu ověřují, takže mělká
+extrakce dá o sobě vědět znovu u Wordu i prohlížeče.
 
 Slovníky obou kontrol žijí v `lang/<kód>.yaml` a jazyk se detekuje ze zdroje
 (viz `lang.py`). Hezká asymetrie uvnitř jednoho balíčku: „musí / může / budou"
@@ -151,12 +163,32 @@ def is_waived(line, ranges):
     return any(start <= line < end for start, end, _ in ranges)
 
 
-def uncovered_places(lines, model_sources, waived):
-    """Segmenty zdroje, do kterých neukazuje žádný `source` modelu."""
+def cited_source_ids(m: dict) -> set:
+    """Id zdrojů, na které se odvolává aspoň jeden výrok."""
+    return {
+        it.get("source")
+        for coll in ("claims", "requirements", "quality_requirements")
+        for it in (m.get(coll) or [])
+        if it.get("source")
+    }
+
+
+def uncovered_places(lines, model_sources, waived, cited):
+    """Segmenty zdroje, do kterých neukazuje žádný **citovaný** zdroj.
+
+    `cited` tam není z opatrnosti, ale proto, že bez něj metrika měřila něco
+    jiného, než co hlásila. Seznam `sources` vyrábí `segment.py`; agent ho jen
+    opíše. Pokrytí počítané z deklarovaných zdrojů proto rostlo s poslušností
+    opisu, ne s odvedenou prací — a bylo tím vyšší, čím míň výroků model měl.
+
+    Naměřeno na třech bězích nad týmž dokumentem: 105 výroků → 80 %,
+    50 výroků → 88 %, 14 výroků → 100 %. Přesně obrácené pořadí.
+    """
     segs = dedupe(segment(lines))
     if not segs:
         return [], 0, 0
-    anchored = [a for a in anchor_sources(lines, model_sources).values() if a is not None]
+    usable = {sid: s for sid, s in model_sources.items() if sid in cited}
+    anchored = [a for a in anchor_sources(lines, usable).values() if a is not None]
 
     out, skipped = [], 0
     for idx, (line, loc, title, kind) in enumerate(segs):
@@ -182,12 +214,7 @@ def uncited_sources(m, lines, waived):
     ostatní metriky přitom hlásily 88% pokrytí.
     """
     src = {s["id"]: s for s in (m.get("sources") or []) if "id" in s}
-    used = {
-        it.get("source")
-        for coll in ("claims", "requirements", "quality_requirements")
-        for it in (m.get(coll) or [])
-        if it.get("source")
-    }
+    used = cited_source_ids(m)
     anchors = anchor_sources(lines, src)
 
     out, skipped = [], 0
@@ -268,10 +295,11 @@ def render(m, places, total_places, numbers, norms, short, statements,
     summary = f"**Místa:** {covered}/{total_places} pokryto ({pct:.0f} %)"
     if waived_places:
         summary += f" · **odepsáno:** {waived_places}"
+    hustota = f" ({statements / total_places:.2f} na místo)" if total_places else ""
     summary += (f" · **osiřelá čísla:** {len(numbers)} · "
                 f"**nepokryté normativní věty:** {len(norms)} z {norms_seen} nalezených · "
                 f"**necitované zdroje:** {len(uncited)} z {total_sources} · "
-                f"**výroků v modelu:** {statements}")
+                f"**výroků v modelu:** {statements}{hustota}")
     out.append(summary)
     out.append("")
 
@@ -285,7 +313,9 @@ def render(m, places, total_places, numbers, norms, short, statements,
 
     if places:
         out += ["## Nepokrytá místa", "",
-                "Segment zdroje, na který neukazuje žádný `source`.", "",
+                "Segment zdroje, do kterého neukazuje žádný citovaný `source`.",
+                "Deklarovat zdroj a nepoužít ho je pro pokrytí totéž jako ho",
+                "nemít — v modelu z toho místa není nic.", "",
                 "| Místo | Druh | Řádek |", "|-------|------|-------|"]
         out += [f"| {p['title']} (`{p['locator']}`) | {p['kind']} | {p['line']} |"
                 for p in places]
@@ -327,7 +357,7 @@ def render(m, places, total_places, numbers, norms, short, statements,
                 for w in (m.get("coverage_waivers") or [])]
         out.append("")
 
-    if not (places or numbers or norms):
+    if not (places or numbers or norms or uncited):
         out += ["Nic neodepsaného nezbylo — každé místo zdroje má citaci, žádné",
                 "číslo ani normativní věta nezůstaly mimo model.", ""]
     return "\n".join(out)
@@ -364,7 +394,8 @@ def main():
     waived, dangling = waived_ranges(lines, m.get("coverage_waivers") or [])
 
     bloks = blocks(lines)
-    places, total_places, w_places = uncovered_places(lines, model_sources, waived)
+    places, total_places, w_places = uncovered_places(
+        lines, model_sources, waived, cited_source_ids(m))
     orphans, w_nums = orphan_numbers(bloks, numbers, waived)
     norms, short, w_norms, norms_seen = uncovered_norms(bloks, words, waived)
     uncited, total_sources, w_uncited = uncited_sources(m, lines, waived)
@@ -378,6 +409,9 @@ def main():
 
     covered, pct = coverage_stats(total_places, places, w_places)
     findings = len(places) + len(orphans) + len(norms) + len(uncited)
+    # Binární nálezy nemají falešně pozitivní variantu — buď na místo ukazuje
+    # výrok, nebo ne. Tyhle drží stav i bez `--strict`; slovní překryv ne.
+    hard = len(places) + len(uncited)
 
     if args.json:
         print(json.dumps({
@@ -398,6 +432,11 @@ def main():
               f"osiřelá čísla {len(orphans)} · "
               f"normativní věty {len(norms)}/{norms_seen} · "
               f"necitované zdroje {len(uncited)}/{total_sources} → {out}")
+        # Hustota patří k číslu pokrytí, ne pod čáru. Sto procent při čtrnácti
+        # výrocích na 76 míst je jiná zpráva než sto procent při stovce.
+        print(f"[pokrytí] výroků {statements} na {total_places} míst "
+              f"({statements / total_places:.2f} na místo)"
+              if total_places else f"[pokrytí] výroků {statements}")
         for o in orphans[:5]:
             print(f"  ✗ číslo {', '.join(o['numbers'])}: {o['sentence'][:70]}")
         for n in norms[:5]:
@@ -413,10 +452,18 @@ def main():
             print(f"  [POZOR] waiver '{w.get('locator', '')}' se ve zdroji nenašel "
                   "— neumlčuje nic", file=sys.stderr)
 
-    record(args.model, "coverage-check", ok=(findings == 0 or not args.strict),
+    ok = hard == 0 and (findings == 0 or not args.strict)
+    if hard and not args.strict:
+        print(f"[POZOR] {hard} binárních nálezů pokrytí ({len(places)} nepokrytých míst, "
+              f"{len(uncited)} necitovaných zdrojů) — stav zapisuju jako neprošlý.\n"
+              "        Buď model doplň o výroky, nebo místa odepiš přes "
+              "`coverage_waivers` s důvodem.", file=sys.stderr)
+
+    record(args.model, "coverage-check", ok=ok,
            detail={"places_total": total_places, "places_covered": covered,
                    "orphan_numbers": len(orphans), "uncovered_norms": len(norms),
                    "uncited_sources": len(uncited), "sources_total": total_sources,
+                   "statements": statements,
                    "waived": waived_total, "dangling_waivers": len(dangling)})
 
     if findings and args.strict:

@@ -102,6 +102,57 @@ def test_necitovany_zdroj_se_najde():
     assert skipped == 0
 
 
+def test_deklarovany_necitovany_zdroj_misto_nepokryva():
+    """Jádro nálezu 2026-08-05: pokrytí se nesmí dát vyrobit opsáním segmentace.
+
+    Reálně: model se 76 zdroji a 14 výroky hlásil 100 % pokrytí — víc než běh
+    se 105 výroky (80 %), protože opsal víc segmentů a citoval míň.
+    """
+    import coverage_check
+
+    zdroje = {
+        "S1": {"locator": "A sparse annotation layer"},
+        "S2": {"locator": "Root cause"},
+        "S3": {"locator": "Discussion"},
+    }
+    places, total, _ = coverage_check.uncovered_places(ZDROJ, zdroje, [], {"S1"})
+    nepokryte = {p["title"] for p in places}
+    assert "Root cause" in nepokryte and "Discussion" in nepokryte
+    assert "A sparse annotation layer" not in nepokryte
+
+    vse = coverage_check.uncovered_places(ZDROJ, zdroje, [], set(zdroje))
+    assert len(vse[0]) < len(places), "citace všech zdrojů musí pokrytí zvýšit"
+    assert vse[1] == total
+
+
+def test_cited_source_ids_bere_vsechny_kolekce():
+    import coverage_check
+
+    m = {
+        "claims": [{"source": "S1"}],
+        "requirements": [{"source": "S2"}, {"title": "bez zdroje"}],
+        "quality_requirements": [{"source": "S3"}],
+    }
+    assert coverage_check.cited_source_ids(m) == {"S1", "S2", "S3"}
+
+
+def test_stav_rozlisi_neproběhlo_od_neproslo(tmp_path):
+    """„Neproběhlo" a „proběhlo a neprošlo" vedou k jiné radě pro člověka."""
+    import pipeline_state
+
+    model = tmp_path / "model.yaml"
+    model.write_text("id: x\n", encoding="utf-8")
+
+    assert pipeline_state.status(model, "coverage-check") == "missing"
+    pipeline_state.record(model, "coverage-check", ok=False)
+    assert pipeline_state.status(model, "coverage-check") == "failed"
+    pipeline_state.record(model, "coverage-check", ok=True)
+    assert pipeline_state.status(model, "coverage-check") == "ok"
+
+    model.write_text("id: y\n", encoding="utf-8")
+    assert pipeline_state.status(model, "coverage-check") == "missing"
+
+
 def test_vsechny_zdroje_citovane_neni_nalez():
     import coverage_check
 
