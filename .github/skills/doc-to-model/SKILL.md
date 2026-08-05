@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.10.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.11.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -69,6 +69,30 @@ jedničkami, protože to málo, co vytáhla, je doložené.
 Kroky 4–7 najednou: `bash scripts/build.sh <model.yaml> [out_dir] [zdroj.txt]`.
 Je to zkratka, ne orchestrátor — pořadí platí i bez ní.
 
+### Jak řetěz projet
+
+**Dostaneš dokument a projedeš celý řetěz najednou. Mezi kroky se neptej.**
+O výsledku každého kroku podej krátkou zprávu a pokračuj.
+
+Ptát se před každým krokem k ničemu nepomáhá. Bezpečnost drží **brány, ne
+otázky**: validace blokuje, emitor nad neověřeným modelem odmítne běžet,
+nezakotvené locatory běh zastaví. Když je něco špatně, řetěz spadne sám a
+řekne proč. Souhlas s krokem, který by stejně selhal, ničemu nepomůže.
+
+Zastav se jen ve třech případech:
+
+| Kdy | Co udělat |
+|-----|-----------|
+| Krok 0 — nevíš, **co má vzniknout** nebo **kam to uložit** | zeptej se, obojí jednou větou |
+| Brána spadla | ohlas naměřenou hodnotu a příčinu, neobcházej ji `--warn-only` bez souhlasu |
+| Krok 8 REVIEW | předej report děr člověku; tohle je jeho práce, ne tvoje |
+
+Ostatní rozhodnutí uděláš sám. Zkrácení `sources` na místa, na která budeš
+opravdu odkazovat, patří mezi ně — je to úsudek, ne dotaz.
+
+Když člověk výslovně řekne, že chce po některém kroku zastavit, poslechni.
+Výchozí stav je ale průběh bez přerušení.
+
 ### 0. Vstup
 
 Zeptej se na dvě věci, pokud nejsou zřejmé: **který dokument** a **co z něj má vzniknout**
@@ -100,7 +124,8 @@ python3 scripts/segment.py --source inputs/zdroj.txt --out /tmp/sources.yaml
 
 Najde stránky, nadpisy, číslované i římské kapitoly a paragrafy, a vypíše hotový
 blok `sources:` k vložení do modelu. Je to **návrh, ne verdikt** — zkrať ho na
-místa, na která budeš opravdu odkazovat.
+místa, na která budeš opravdu odkazovat. Zkrácení uděláš sám a pokračuješ; není
+to dotaz na člověka.
 
 Skript si své návrhy sám zkusí dohledat toutéž funkcí, kterou pak používá
 prohlížeč i kontrola opory, a nahlásí poměr. Locator, který se nedá zakotvit,

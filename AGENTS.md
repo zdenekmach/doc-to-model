@@ -14,6 +14,11 @@ ingest → segment → EXTRACT (ty) → validate → ground-check → coverage �
 Tvůj jediný krok je **extrakce**. Zbytek jsou skripty a mají brány: emitor nad
 neověřeným modelem odmítne běžet, takže pořadí nejde obejít.
 
+**Dostaneš dokument a projedeš celý řetěz najednou.** Mezi kroky se neptej, jen
+krátce hlas, co který vrátil. Bezpečnost drží brány, ne otázky — když je něco
+špatně, řetěz spadne sám a řekne proč. Zastav se, jen když nevíš, co má vzniknout
+a kam to uložit, když spadne brána, nebo na konci u předání reportu děr.
+
 ## Čtyři pravidla
 
 1. **Nic, co ve zdroji není, se nesmí objevit jako fakt.** Doplněné prvky dostanou

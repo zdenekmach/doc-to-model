@@ -1,0 +1,123 @@
+# Návrh zdrojových míst — vlož do modelu jako `sources:`
+# Zkrať na ta, na která budeš opravdu odkazovat.
+sources:
+  - id: S1
+    title: 'OPINION ON AI GOVERNANCE'
+    locator: 's. 1'   # strana
+  - id: S2
+    title: 'OPINION ON AI GOVERNANCE AND RISK MANAGEMENT'
+    locator: 's. 2'   # strana
+  - id: S3
+    title: 'The European Insurance and Occupational Pensions Authority (EIOPA) pro'
+    locator: '1.1. The European Insurance and Occupational Pensions Authority (EIOPA'   # kapitola
+  - id: S4
+    title: 'EIOPA delivers this Opinion on the basis of Articles 17, 20 and 25 of '
+    locator: '1.2. EIOPA delivers this Opinion on the basis of Articles 17, 20 and 2'   # kapitola
+  - id: S5
+    title: 'This Opinion is addressed to the competent authorities, as defined in '
+    locator: '1.3. This Opinion is addressed to the competent authorities, as define'   # kapitola
+  - id: S6
+    title: 'CONTEXT , OBJECTIVE AND SCOPE'
+    locator: '2. CONTEXT , OBJECTIVE AND SCOPE'   # kapitola
+  - id: S7
+    title: 'Artificial Intelligence (AI) is expected to play a pivotal role in the'
+    locator: '2.1. Artificial Intelligence (AI) is expected to play a pivotal role i'   # kapitola
+  - id: S8
+    title: 'OPINION ON AI GOVERNANCE AND RISK MANAGEMENT'
+    locator: 's. 3'   # strana
+  - id: S9
+    title: 'In July 2024 the Regulation (EU) 2024/1689 ( the AI Act )7 was publish'
+    locator: '2.3. In July 2024 the Regulation (EU) 2024/1689 ( the AI Act )7 was pu'   # kapitola
+  - id: S10
+    title: 'Among other high -risk AI systems which may be used by undertakings , '
+    locator: '2.4. Among other high -risk AI systems which may be used by undertakin'   # kapitola
+  - id: S11
+    title: 'The remaining AI systems in insurance that are not prohibited AI pract'
+    locator: '2.5. The remaining AI systems in insurance that are not prohibited AI '   # kapitola
+  - id: S12
+    title: 'The objective of this Opinion is to provide further clarity on the mai'
+    locator: '2.6. The objective of this Opinion is to provide further clarity on th'   # kapitola
+  - id: S13
+    title: 'The Opinion follows a principle -based approach and is in line with th'
+    locator: '2.7. The Opinion follows a principle -based approach and is in line wi'   # kapitola
+  - id: S14
+    title: 'OPINION ON AI GOVERNANCE AND RISK MANAGEMENT'
+    locator: 's. 4'   # strana
+  - id: S15
+    title: 'This Opinion does not set out new requirements and does not seek to al'
+    locator: '2.8. This Opinion does not set out new requirements and does not seek '   # kapitola
+  - id: S16
+    title: 'This Opinion provides guidance on how to interpret various provisions '
+    locator: '2.9. This Opinion provides guidance on how to interpret various provis'   # kapitola
+  - id: S17
+    title: 'To ensure consistency at European level, this Opinion is based on the '
+    locator: '2.10. To ensure consistency at European level, this Opinion is based o'   # kapitola
+  - id: S18
+    title: 'OPINION ON AI GOVERNANCE AND RISK MANAGEMENT'
+    locator: 's. 5'   # strana
+  - id: S19
+    title: 'According to Article 41 of the Solvency II Directive , insurance under'
+    locator: '3.1. According to Article 41 of the Solvency II Directive , insurance '   # kapitola
+  - id: S20
+    title: 'As a first step, for those AI systems that are within the scope of thi'
+    locator: '3.2. As a first step, for those AI systems that are within the scope o'   # kapitola
+  - id: S21
+    title: 'The impact assessment should take into account criteria such as the pr'
+    locator: '3.3. The impact assessment should take into account criteria such as t'   # kapitola
+  - id: S22
+    title: 'Undertakings should also assess prudential considerations such as the '
+    locator: '3.4. Undertakings should also assess prudential considerations such as'   # kapitola
+  - id: S23
+    title: 'OPINION ON AI GOVERNANCE AND RISK MANAGEMENT'
+    locator: 's. 6'   # strana
+  - id: S24
+    title: 'As a second step , taking into account the impact assessment mentioned'
+    locator: '3.5. As a second step , taking into account the impact assessment ment'   # kapitola
+  - id: S25
+    title: 'For example , in application of the principle of proportionality, the '
+    locator: '3.6. For example , in application of the principle of proportionality,'   # kapitola
+  - id: S26
+    title: 'In line with Article 41 of the Solven cy II Directive , Article 25 of '
+    locator: '3.7. In line with Article 41 of the Solven cy II Directive , Article 2'   # kapitola
+  - id: S27
+    title: 'The responsible use of AI system s is not achieved by a standalone mea'
+    locator: '3.8. The responsible use of AI system s is not achieved by a standalon'   # kapitola
+  - id: S28
+    title: 'Undertakings need to define and document the approach to the use of AI'
+    locator: '3.9. Undertakings need to define and document the approach to the use '   # kapitola
+  - id: S29
+    title: 'OPINION ON AI GOVERNANCE AND RISK MANAGEMENT'
+    locator: 's. 7'   # strana
+  - id: S30
+    title: 'The approach to AI systems should also include frameworks where the ro'
+    locator: '3.10. The approach to AI systems should also include frameworks where '   # kapitola
+  - id: S31
+    title: 'Undertakings are ultimately responsible for the AI systems that they u'
+    locator: '3.11. Undertakings are ultimately responsible for the AI systems that '   # kapitola
+  - id: S32
+    title: 'Article 17 of the IDD stipulates that insurance distributors shall alw'
+    locator: '3.12. Article 17 of the IDD stipulates that insurance distributors sha'   # kapitola
+  - id: S33
+    title: 'Following a risk -based and proportionate approach , undertakings shou'
+    locator: '3.13. Following a risk -based and proportionate approach , undertaking'   # kapitola
+  - id: S34
+    title: 'OPINION ON AI GOVERNANCE AND RISK MANAGEMENT'
+    locator: 's. 8'   # strana
+  - id: S35
+    title: 'The outcomes of AI systems should also be regularly monitored and , wh'
+    locator: '3.15. The outcomes of AI systems should also be regularly monitored an'   # kapitola
+  - id: S36
+    title: 'Adequate redress mechanisms (e.g. procedures to submit complaints)14sh'
+    locator: '3.16. Adequate redress mechanisms (e.g. procedures to submit complaint'   # kapitola
+  - id: S37
+    title: 'According to Article 260(1)( a)(ii) of the Commission Delegated Regula'
+    locator: '3.17. According to Article 260(1)( a)(ii) of the Commission Delegated '   # kapitola
+  - id: S38
+    title: 'Following a risk -based and proportionate approach, u ndertakings shou'
+    locator: '3.18. Following a risk -based and proportionate approach, u ndertaking'   # kapitola
+  - id: S39
+    title: 'The data used to train and test the AI system should be complete (e.g.'
+    locator: '3.19. The data used to train and test the AI system should be complete'   # kapitola
+  - id: S40
+    title: 'Sound data governance should be applied throughout the AI system life '
+    locator: '3.20. Sound data governance should be applied throughout the AI system'   # kapitola
