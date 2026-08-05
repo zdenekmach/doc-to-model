@@ -55,6 +55,8 @@ class LanguagePack:
             re.compile(r"\b(" + "|".join(patterns) + r")\b", re.IGNORECASE)
             if patterns else None
         )
+        self.labels: dict[str, str] = data.get("labels") or {}
+
         if not self.stopwords:
             raise ValueError(f"{path.name}: prázdný seznam stopwords")
         if self.normative is None:
@@ -62,6 +64,22 @@ class LanguagePack:
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<LanguagePack {self.code} ({self.source})>"
+
+
+def label(pack: "LanguagePack", key: str, fallback: dict[str, str] | None = None) -> str:
+    """Popisek projekce. Chybějící klíč se hlásí, nenahrazuje se tiše.
+
+    Balíček dopsaný za běhu (`source: generated`) může labels vynechat. Tichý
+    přepad do jiného jazyka by vyrobil dokument s promíchanou hlavičkou, což se
+    hledá hůř než chybějící slovo.
+    """
+    if key in pack.labels:
+        return pack.labels[key]
+    if fallback and key in fallback:
+        print(f"[POZOR] balíček '{pack.code}' nemá popisek '{key}' — beru referenční.",
+              file=sys.stderr)
+        return fallback[key]
+    return key
 
 
 def load_packs() -> dict[str, LanguagePack]:
@@ -149,9 +167,13 @@ def main() -> int:
         if not packs:
             print(f"žádné balíčky v {LANG_DIR}")
             return 1
+        ref = packs.get("cs")
         for code, p in sorted(packs.items()):
+            chybi = sorted(set(ref.labels) - set(p.labels)) if ref else []
+            note = f"  CHYBÍ popisky: {', '.join(chybi[:4])}" if chybi else ""
             print(f"  {code:<4} {p.name:<12} {p.source:<10} "
-                  f"{len(p.stopwords):>3} stopwordů  {p.path.name}")
+                  f"{len(p.stopwords):>3} stopwordů  {len(p.labels):>3} popisků  "
+                  f"{p.path.name}{note}")
         return 0
 
     if cmd == "detect":

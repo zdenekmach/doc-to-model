@@ -18,15 +18,33 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
 
+import lang
 from pipeline_state import require, warn_if_missing
 
 BRAND = RGBColor(0x1F, 0x49, 0x7D)
 PRIORITY_ORDER = {"MUST": 0, "SHOULD": 1, "COULD": 2, "WONT": 3}
-CONFIDENCE_LABEL = {
-    "explicit": "doslova ve zdroji",
-    "derived": "odvozeno",
-    "assumed": "doplněno — ověřit",
-}
+
+# Popisky Wordu. Word je PROJEKCE modelu, takže má mluvit jazykem zdroje —
+# česká hlavička nad anglickým obsahem dokument znehodnocuje pro toho, komu se
+# posílá. Prohlížeč je naopak nástroj, ne výstup, a zůstává česky.
+_PACK = None
+_REF = None
+
+
+def L(key: str) -> str:
+    """Popisek v jazyce modelu."""
+    if _PACK is None:
+        raise RuntimeError("jazykový balíček nebyl nastaven — viz main()")
+    return lang.label(_PACK, key, _REF)
+
+
+def confidence_label(value: str) -> str:
+    """Stav jistoty výroku v jazyce modelu."""
+    return {
+        "explicit": L("conf_explicit"),
+        "derived": L("conf_derived"),
+        "assumed": L("assumed"),
+    }.get(value, value)
 
 
 def load(path: Path) -> dict:
@@ -84,7 +102,7 @@ def build(m: dict) -> Document:
     sources = index_by_id(m.get("sources"))
     actors = index_by_id(m.get("actors"))
 
-    title = doc.add_heading(m.get("title", "Bez názvu"), level=0)
+    title = doc.add_heading(m.get("title", L("untitled")), level=0)
     for run in title.runs:
         run.font.color.rgb = BRAND
 
@@ -96,12 +114,12 @@ def build(m: dict) -> Document:
 
     kv_table(doc, [
         ("ID", m.get("id")),
-        ("Verze", m.get("version")),
-        ("Stav", m.get("status")),
-        ("Autor", m.get("author")),
-        ("Datum", m.get("date")),
-        ("Zdrojový dokument", m.get("source_document")),
-        ("Předpisy", m.get("regulations")),
+        (L("version"), m.get("version")),
+        (L("status"), m.get("status")),
+        (L("author"), m.get("author")),
+        (L("date"), m.get("date")),
+        (L("source_document"), m.get("source_document")),
+        (L("regulations"), m.get("regulations")),
     ])
     doc.add_paragraph()
 
@@ -109,13 +127,13 @@ def build(m: dict) -> Document:
 
     if m.get("context"):
         n += 1
-        doc.add_heading(f"{n}. Kontext", level=1)
+        doc.add_heading(f"{n}. {L('context')}", level=1)
         doc.add_paragraph(str(m["context"]).strip())
 
     if m.get("actors"):
         n += 1
-        doc.add_heading(f"{n}. Aktéři", level=1)
-        t = header_table(doc, ["ID", "Aktér", "Role"])
+        doc.add_heading(f"{n}. {L('actors')}", level=1)
+        t = header_table(doc, ["ID", L("actor"), L("role")])
         for a in m["actors"]:
             c = t.add_row().cells
             c[0].text = a.get("id", "")
@@ -124,19 +142,19 @@ def build(m: dict) -> Document:
 
     if m.get("scope_in") or m.get("scope_out"):
         n += 1
-        doc.add_heading(f"{n}. Rozsah", level=1)
+        doc.add_heading(f"{n}. {L('scope')}", level=1)
         if m.get("scope_in"):
-            doc.add_heading("V rozsahu", level=2)
+            doc.add_heading(L("scope_in"), level=2)
             for item in m["scope_in"]:
                 doc.add_paragraph(item, style="List Bullet")
         if m.get("scope_out"):
-            doc.add_heading("Mimo rozsah", level=2)
+            doc.add_heading(L("scope_out"), level=2)
             for item in m["scope_out"]:
                 doc.add_paragraph(item, style="List Bullet")
 
     if m.get("claims"):
         n += 1
-        doc.add_heading(f"{n}. Tvrzení", level=1)
+        doc.add_heading(f"{n}. {L('claims')}", level=1)
         for c in m["claims"]:
             head = f"{c.get('id', '')} — {c.get('title', '')}"
             if c.get("claim_type"):
@@ -145,16 +163,16 @@ def build(m: dict) -> Document:
             if c.get("description"):
                 doc.add_paragraph(str(c["description"]).strip())
             if c.get("basis"):
-                p = doc.add_paragraph(f"Opora: {c['basis']}")
+                p = doc.add_paragraph(f"{L('basis')}: {c['basis']}")
                 if p.runs:
                     p.runs[0].italic = True
             meta_bits = []
             if c.get("scope"):
-                meta_bits.append(f"Rozsah platnosti: {c['scope']}")
+                meta_bits.append(f"{L('scope_of_validity')}: {c['scope']}")
             if c.get("source"):
-                meta_bits.append(f"Zdroj: {source_label(c['source'], sources)}")
+                meta_bits.append(f"{L('source')}: {source_label(c['source'], sources)}")
             if c.get("confidence"):
-                meta_bits.append(CONFIDENCE_LABEL.get(c["confidence"], c["confidence"]))
+                meta_bits.append(confidence_label(c["confidence"]))
             if meta_bits:
                 p = doc.add_paragraph(" · ".join(meta_bits))
                 if p.runs:
@@ -162,7 +180,7 @@ def build(m: dict) -> Document:
 
     if m.get("requirements"):
         n += 1
-        doc.add_heading(f"{n}. Funkční požadavky", level=1)
+        doc.add_heading(f"{n}. {L('requirements')}", level=1)
         reqs = sorted(
             m["requirements"],
             key=lambda r: (PRIORITY_ORDER.get(r.get("priority"), 9), r.get("id", "")),
@@ -175,7 +193,7 @@ def build(m: dict) -> Document:
             if r.get("description"):
                 doc.add_paragraph(str(r["description"]).strip())
             if r.get("acceptance"):
-                p = doc.add_paragraph("Akceptační kritéria:")
+                p = doc.add_paragraph(L("acceptance") + ":")
                 p.runs[0].bold = True
                 for ac in r["acceptance"]:
                     doc.add_paragraph(ac, style="List Bullet")
@@ -185,17 +203,17 @@ def build(m: dict) -> Document:
                     f"{j} — {claims_by_id.get(j, {}).get('title', '?')}"
                     for j in r["justified_by"]
                 )
-                p = doc.add_paragraph(f"Plyne z: {duvody}")
+                p = doc.add_paragraph(f"{L('justified_by')}: {duvody}")
                 if p.runs:
                     p.runs[0].italic = True
             meta_bits = []
             if r.get("actor"):
                 who = actors.get(r["actor"], {}).get("name", r["actor"])
-                meta_bits.append(f"Odpovídá: {who}")
+                meta_bits.append(f"{L('responsible')}: {who}")
             if r.get("source"):
-                meta_bits.append(f"Zdroj: {source_label(r['source'], sources)}")
+                meta_bits.append(f"{L('source')}: {source_label(r['source'], sources)}")
             if r.get("confidence"):
-                meta_bits.append(CONFIDENCE_LABEL.get(r["confidence"], r["confidence"]))
+                meta_bits.append(confidence_label(r["confidence"]))
             if meta_bits:
                 p = doc.add_paragraph(" · ".join(meta_bits))
                 if p.runs:
@@ -203,8 +221,8 @@ def build(m: dict) -> Document:
 
     if m.get("quality_requirements"):
         n += 1
-        doc.add_heading(f"{n}. Nefunkční požadavky", level=1)
-        t = header_table(doc, ["ID", "Kategorie", "Požadavek", "Zdroj"])
+        doc.add_heading(f"{n}. {L('quality_requirements')}", level=1)
+        t = header_table(doc, ["ID", L("category"), L("requirement"), L("source")])
         for q in m["quality_requirements"]:
             c = t.add_row().cells
             c[0].text = q.get("id", "")
@@ -214,13 +232,13 @@ def build(m: dict) -> Document:
 
     if m.get("entities"):
         n += 1
-        doc.add_heading(f"{n}. Datový model", level=1)
+        doc.add_heading(f"{n}. {L('entities')}", level=1)
         for e in m["entities"]:
             doc.add_heading(f"{e.get('name', e.get('id', ''))}", level=2)
             if e.get("description"):
                 doc.add_paragraph(e["description"])
             if e.get("fields"):
-                t = header_table(doc, ["Pole", "Typ", "Povinné", "Poznámka"])
+                t = header_table(doc, [L("field"), L("type"), L("required"), L("note")])
                 for f in e["fields"]:
                     c = t.add_row().cells
                     c[0].text = f.get("name", "")
@@ -230,10 +248,10 @@ def build(m: dict) -> Document:
 
     if m.get("process"):
         n += 1
-        doc.add_heading(f"{n}. Procesní tok", level=1)
+        doc.add_heading(f"{n}. {L('process')}", level=1)
         proc = m["process"]
         doc.add_paragraph(proc.get("name", ""))
-        t = header_table(doc, ["Krok", "Typ", "Popis", "Aktér", "Pokračuje"])
+        t = header_table(doc, [L("step"), L("type"), L("description"), L("actor"), L("next")])
         for s in proc.get("steps", []):
             c = t.add_row().cells
             c[0].text = s.get("id", "")
@@ -247,15 +265,15 @@ def build(m: dict) -> Document:
             else:
                 c[4].text = s.get("next", "") or ""
         p = doc.add_paragraph(
-            "Diagram téhož procesu se generuje ze stejného modelu (emit_drawio.py)."
+            L("diagram_note")
         )
         if p.runs:
             p.runs[0].italic = True
 
     if m.get("risks"):
         n += 1
-        doc.add_heading(f"{n}. Rizika", level=1)
-        t = header_table(doc, ["ID", "Riziko", "Opatření"])
+        doc.add_heading(f"{n}. {L('risks')}", level=1)
+        t = header_table(doc, ["ID", L("risk"), L("mitigation")])
         for r in m["risks"]:
             c = t.add_row().cells
             c[0].text = r.get("id", "")
@@ -264,14 +282,14 @@ def build(m: dict) -> Document:
 
     if m.get("open_questions"):
         n += 1
-        doc.add_heading(f"{n}. Otevřené otázky", level=1)
+        doc.add_heading(f"{n}. {L('open_questions')}", level=1)
         for q in m["open_questions"]:
             doc.add_paragraph(q, style="List Bullet")
 
     if sources:
         n += 1
-        doc.add_heading(f"{n}. Zdroje", level=1)
-        t = header_table(doc, ["ID", "Zdroj", "Místo"])
+        doc.add_heading(f"{n}. {L('sources')}", level=1)
+        t = header_table(doc, ["ID", L("source"), L("locator")])
         for sid, s in sources.items():
             c = t.add_row().cells
             c[0].text = sid
@@ -280,7 +298,7 @@ def build(m: dict) -> Document:
 
     footer = doc.sections[0].footer
     footer.paragraphs[0].text = (
-        f"{m.get('id', '')} v{m.get('version', '')} · generováno deterministicky z modelu"
+        f"{m.get('id', '')} v{m.get('version', '')} · " + L('footer')
     )
     return doc
 
@@ -289,6 +307,7 @@ def main():
     ap = argparse.ArgumentParser(description="Emit .docx z instance analytical-doc.")
     ap.add_argument("--model", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
+    ap.add_argument("--lang", help="Kód jazyka popisků (default: detekce z modelu).")
     args = ap.parse_args()
 
     require(args.model, ["validate"], "emit")
@@ -296,6 +315,21 @@ def main():
                     "výstup může nést tvrzení bez opory ve zdroji")
 
     m = load(args.model)
+
+    # Jazyk se bere z MODELU, ne ze zdrojového textu — emitor zdroj nedostává
+    # a model je psaný jazykem dokumentu, takže nese stejnou informaci.
+    global _PACK, _REF
+    packs = lang.load_packs()
+    _REF = packs["cs"].labels if "cs" in packs else {}
+    model_text = " ".join(
+        str(x.get(k, ""))
+        for coll in ("claims", "requirements", "quality_requirements")
+        for x in (m.get(coll) or [])
+        for k in ("title", "description")
+    ) or str(m.get("title", ""))
+    _PACK, how = lang.resolve(model_text, args.lang)
+    print(f"[jazyk] popisky: {how}")
+
     doc = build(m)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     doc.save(args.out)

@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.13.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.14.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -569,7 +569,7 @@ než dokonalý zdroj.
 | `scripts/coverage_check.py` | Postpodmínka extrakce — pokrytí zdroje modelem (zdroj → model) |
 | `scripts/pipeline_state.py` · `mark_step.py` | Brány mezi kroky (`<model>.state.json`) |
 | `scripts/sourcemap.py` | Locator → řádky; sdílí prohlížeč i kontrola opory |
-| `scripts/lang.py` · `lang/*.yaml` | Jazykové balíčky — stopwordy a normativní značky jako data |
+| `scripts/lang.py` · `lang/*.yaml` | Jazykové balíčky — stopwordy, normativní značky a popisky Wordu jako data |
 | `scripts/build.sh` | Zkratka pro kroky 4–7 (validace → opora → pokrytí → projekce) |
 | `scripts/emit_word.py` · `emit_drawio.py` · `emit_context.py` · `emit_viewer.py` · `emit_claims.py` | Emitory |
 | `references/extraction.md` | Jak extrahovat věrně (pravidla, příklady, pasti) |
