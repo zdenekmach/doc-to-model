@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.11.1 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.12.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -66,13 +66,38 @@ jedna z nich jde vidět na extrahovaných datech — proto ta druhá kontrola č
 zdroj, ne model. Mělká extrakce projde validací i kontrolou opory se samými
 jedničkami, protože to málo, co vytáhla, je doložené.
 
-Kroky 4–7 najednou: `bash scripts/build.sh <model.yaml> [out_dir] [zdroj.txt]`.
-Je to zkratka, ne orchestrátor — pořadí platí i bez ní.
+`scripts/build.sh` spouští **jen kroky 4–7** a potřebuje **hotový model**. Není
+to spouštěč celého řetězu a samotný dokument mu nestačí.
 
 ### Jak řetěz projet
 
-**Dostaneš dokument a projedeš celý řetěz najednou. Mezi kroky se neptej.**
+**Dostaneš dokument a projdeš kroky popořadě sám, bez ptaní mezi nimi.**
 O výsledku každého kroku podej krátkou zprávu a pokračuj.
+
+Konkrétně, od dokumentu k výstupům:
+
+```bash
+# 1. INGEST — jen když vstup NENÍ text (.pdf, .docx). U .txt a .md přeskoč.
+python3 scripts/ingest.py --in <dokument> --out inputs/zdroj.txt
+
+# 2. SEGMENT — návrh zdrojových míst, který si sám zkrátíš
+python3 scripts/segment.py --source inputs/zdroj.txt --out /tmp/sources.yaml
+
+# 3. EXTRACT — TADY PÍŠEŠ MODEL TY. Žádný skript to neudělá.
+#    Vznikne <cíl>/model.yaml: sources + requirements + claims proti schématu.
+
+# 4.–7. Zbytek jedním příkazem, až model EXISTUJE a něco obsahuje
+bash scripts/build.sh <cíl>/model.yaml <cíl>/out inputs/zdroj.txt
+```
+
+<gate severity="BLOCKER">
+**Nezačínej `build.sh`.** Je to poslední krok, ne první. Když ho spustíš nad
+neexistujícím modelem, skončí chybou; když nad prázdným, doběhne a vyrobí
+prázdné výstupy. Ani jedno není výsledek.
+
+Reálně se stalo obojí: jednou agent přeskočil EXTRACT a dostal prázdný Word,
+podruhé spustil rovnou `build.sh` a dostal „model file not found".
+</gate>
 
 Ptát se před každým krokem k ničemu nepomáhá. Bezpečnost drží **brány, ne
 otázky**: validace blokuje, emitor nad neověřeným modelem odmítne běžet,

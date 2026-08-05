@@ -27,6 +27,22 @@ VALIDATE="$S/validate/validate.py"
 
 BASE="$(basename "${MODEL%.*}")"
 
+# Chybějící model má jedinou obvyklou příčinu: někdo spustil build.sh jako první
+# krok. Holé „soubor nenalezen" ho pošle hledat překlep v cestě místo pravdy,
+# že mu chybí celá extrakce.
+if [[ ! -f "$MODEL" ]]; then
+  echo "[CHYBA] Model neexistuje: $MODEL" >&2
+  echo "" >&2
+  echo "build.sh pokrývá kroky 4–7 a potřebuje HOTOVÝ model. Není to spouštěč" >&2
+  echo "celého řetězu — samotný zdrojový dokument mu nestačí." >&2
+  echo "" >&2
+  echo "Před ním musí proběhnout:" >&2
+  echo "  1. ingest.py   (jen když vstup není text)" >&2
+  echo "  2. segment.py  (návrh zdrojových míst)" >&2
+  echo "  3. EXTRACT     — model.yaml napíše agent, žádný skript to neudělá" >&2
+  exit 2
+fi
+
 echo "── Validace ────────────────────────────────────────"
 python3 "$VALIDATE" --schema "$SCHEMA" --data "$MODEL" --class Document
 python3 "$S/mark_step.py" --model "$MODEL" --step validate
