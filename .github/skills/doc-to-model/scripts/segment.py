@@ -99,8 +99,12 @@ def main():
     ap = argparse.ArgumentParser(description="Navrhni zdrojová místa ze zdrojového textu.")
     ap.add_argument("--source", required=True, type=Path)
     ap.add_argument("--out", type=Path)
-    ap.add_argument("--max", type=int, default=40,
-                    help="Kolik nejvýš míst navrhnout (default 40).")
+    # BEZ LIMITU. Výchozí chování je modelovat celý dokument — tichý strop by
+    # rozhodl o hloubce za člověka a nikdo by to nespojil s tím, že model pak
+    # pokryje jen část zdroje. `--max` je pro případ, kdy záměrně chceš výřez.
+    ap.add_argument("--max", type=int, default=None,
+                    help="Omez počet navržených míst. Bez něj se navrhnou VŠECHNA "
+                         "— strop pokrytí modelu je tím pádem 100 %%.")
     args = ap.parse_args()
 
     if args.source.suffix.lower() == ".pdf":
@@ -109,9 +113,10 @@ def main():
     lines = args.source.read_text(encoding="utf-8").splitlines()
     items = dedupe(segment(lines))
 
+    total = len(items)
     dropped = 0
-    if len(items) > args.max:
-        dropped = len(items) - args.max
+    if args.max is not None and total > args.max:
+        dropped = total - args.max
         items = items[: args.max]
 
     # Self-check: dohledej vlastní návrhy toutéž cestou jako zbytek pipeline.
@@ -129,7 +134,12 @@ def main():
 
     print(f"[segment] zakotvitelných {ok}/{len(items)}")
     if dropped:
-        print(f"[segment] vynecháno {dropped} dalších míst (limit --max {args.max})")
+        # Naměřený dopad, ne jen počet zahozených. Kolik míst zavedeš, tolik je
+        # strop pokrytí — a to je věc, kterou má člověk vidět v momentě volby.
+        strop = len(items) / total * 100
+        print(f"[POZOR] vynecháno {dropped} z {total} míst (limit --max {args.max}).")
+        print(f"        Model tím může pokrýt nejvýš {strop:.0f} % zdroje. "
+              f"Bez --max se navrhnou všechna.")
     if ok < len(items):
         print("[POZOR] Některý navržený locator se nedá dohledat — oprav ho ručně, "
               "jinak z citace bude ozdoba.", file=sys.stderr)

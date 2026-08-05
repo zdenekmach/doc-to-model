@@ -1,0 +1,339 @@
+id: "eiopa-ai-governance-2025"
+title: "EIOPA Opinion on AI Governance and Risk Management"
+subtitle: "Supervisory expectations for responsible use of AI systems in insurance"
+version: "1.0.0"
+status: Draft
+author: EIOPA
+date: "2025-08-06"
+source_document: "EIOPA-BoS-25-360, 06 August 2025"
+regulations:
+  - "Regulation (EU) No 1094/2010"
+  - "Directive (EU) 2016/97 (IDD)"
+  - "Directive 2009/138/EC (Solvency II)"
+  - "Regulation (EU) 2022/2554 (DORA)"
+  - "Regulation (EU) 2024/1689 (AI Act)"
+
+context: |
+  EIOPA provides guidance on AI governance and risk management for insurance undertakings 
+  using AI systems that are neither prohibited nor classified as high-risk under the AI Act. 
+  The Opinion clarifies how existing insurance sectoral legislation applies to these systems 
+  and establishes supervisory expectations for responsible AI use.
+
+sources:
+  - id: S1
+    title: 'Opinion title page'
+    locator: 's. 1'
+  - id: S3
+    title: 'EIOPA authority and mandate'
+    locator: '1.1. The European Insurance and Occupational Pensions Authority (EIOPA)'
+  - id: S6
+    title: 'Context, objective and scope section'
+    locator: '2. CONTEXT , OBJECTIVE AND SCOPE'
+  - id: S7
+    title: 'AI role in insurance digital transformation'
+    locator: '2.1. Artificial Intelligence (AI) is expected to play a pivotal role'
+  - id: S9
+    title: 'AI Act publication and principles'
+    locator: '2.3. In July 2024 the Regulation (EU) 2024/1689'
+  - id: S10
+    title: 'High-risk AI systems in insurance'
+    locator: '2.4. Among other high-risk AI systems'
+  - id: S12
+    title: 'Opinion objective'
+    locator: '2.6. The objective of this Opinion'
+  - id: S15
+    title: 'Scope clarification'
+    locator: '2.8. This Opinion does not set out new requirements'
+  - id: S19
+    title: 'Solvency II governance requirements'
+    locator: '3.1. According to Article 41 of the Solvency II Directive'
+  - id: S20
+    title: 'Risk-based AI system assessment'
+    locator: '3.2. As a first step'
+  - id: S21
+    title: 'Impact assessment criteria'
+    locator: '3.3. The impact assessment should take into account criteria'
+  - id: S22
+    title: 'Prudential considerations'
+    locator: '3.4. Undertakings should also assess prudential considerations'
+  - id: S25
+    title: 'Proportionality principle'
+    locator: '3.6. For example , in application of the principle of proportionality'
+  - id: S28
+    title: 'AI governance framework definition'
+    locator: '3.9. Undertakings need to define and document'
+  - id: S29
+    title: 'Undertaking responsibility for AI systems'
+    locator: '3.11. Undertakings are ultimately responsible'
+  - id: S30
+    title: 'Roles and responsibilities framework'
+    locator: '3.10. The approach to AI systems should also include frameworks'
+  - id: S32
+    title: 'Fairness and ethics requirement'
+    locator: '3.12. Article 17 of the IDD stipulates'
+  - id: S35
+    title: 'AI system monitoring and auditing'
+    locator: '3.15. The outcomes of AI systems should be regularly monitored'
+
+actors:
+  - id: A1
+    name: "Undertakings"
+    role: "Insurance company or insurance distributor"
+    kind: "Organization"
+  - id: A2
+    name: "Third-party service providers"
+    role: "Providers of AI systems or services"
+    kind: "Organization"
+  - id: A3
+    name: "Competent authorities"
+    role: "Supervisory authorities"
+    kind: "Organization"
+  - id: A4
+    name: "Customers"
+    role: "End users of insurance products or services"
+    kind: "Person"
+
+claims:
+  - id: T1
+    title: "AI is pivotal in insurance digital transformation"
+    claim_type: fakt
+    basis: "industry trend assessment"
+    subject: "Artificial Intelligence (AI)"
+    predicate: "role in"
+    value: "pivotal in ongoing digital transformation"
+    scope: "insurance sector value chain"
+    description: |
+      AI is expected to play a pivotal role in the ongoing digital transformation 
+      in all industries, including insurance. There is a trend towards increasing use 
+      of AI throughout the insurance value chain in pricing, underwriting, claims 
+      management, and fraud detection.
+    source: S7
+    confidence: explicit
+
+  - id: T2
+    title: "AI Act was published in July 2024"
+    claim_type: fakt
+    basis: "regulatory publication"
+    subject: "Regulation (EU) 2024/1689"
+    predicate: "publication"
+    value: "July 2024"
+    scope: "European Union"
+    description: |
+      The AI Act (Regulation (EU) 2024/1689) was published in the Official Journal 
+      of the European Union in July 2024.
+    source: S9
+    confidence: explicit
+
+  - id: T3
+    title: "AI Act follows risk-based classification"
+    claim_type: fakt
+    basis: "regulatory framework"
+    subject: "AI Act"
+    predicate: "classification approach"
+    value: "risk-based, with different levels"
+    scope: "all sectors"
+    description: |
+      The AI Act follows a risk-based approach and classifies AI systems according 
+      to different risk levels to ensure a high level of protection of fundamental 
+      rights, health, and safety.
+    source: S9
+    confidence: explicit
+
+  - id: T4
+    title: "High-risk AI systems for life and health insurance pricing identified"
+    claim_type: fakt
+    basis: "regulatory classification"
+    subject: "High-risk AI systems"
+    predicate: "application in"
+    value: "risk assessment and pricing for life and health insurance"
+    scope: "insurance sector"
+    description: |
+      The AI Act identifies as high-risk the use of AI systems for risk assessment 
+      and pricing in relation to natural persons in the case of life and health insurance.
+    source: S10
+    confidence: explicit
+
+  - id: T5
+    title: "Opinion provides interpretation, not new requirements"
+    claim_type: fakt
+    basis: "scope statement"
+    subject: "EIOPA Opinion"
+    predicate: "purpose"
+    value: "interpretation of existing sectoral legislation in AI context"
+    scope: "insurance sector"
+    description: |
+      This Opinion does not set out new requirements and does not seek to alter 
+      the scope of the AI Act by extending requirements for high-risk systems to 
+      all AI systems used in insurance. It provides guidance on how to interpret 
+      existing insurance sectoral legislation in the context of AI systems.
+    source: S15
+    confidence: explicit
+
+  - id: T6
+    title: "Existing legislation applies to all mathematical models"
+    claim_type: fakt
+    basis: "regulatory principle"
+    subject: "Insurance sectoral legislation"
+    predicate: "applies to"
+    value: "mathematical models regardless of AI classification"
+    scope: "insurance sector"
+    description: |
+      Existing insurance sectoral legislation requires adequate and proportionate 
+      governance and risk management measures when using mathematical models, 
+      regardless of whether they are considered AI systems or not.
+    source: S15
+    confidence: explicit
+
+requirements:
+  - id: R1
+    title: "Assess risk of different AI systems"
+    description: |
+      Undertakings must assess the risk of different AI systems used. The assessment 
+      should be conducted in a manner that is proportionate to the potential impact 
+      of the specific AI system on customers and on the undertaking itself. AI systems 
+      with minimal anticipated impact may be subject to relatively simple assessment, 
+      while those likely to have greater impact should undergo more comprehensive evaluation.
+    actor: A1
+    priority: MUST
+    source: S20
+    confidence: explicit
+    acceptance:
+      - "Risk assessment completed for each AI system"
+      - "Assessment proportionate to identified impact level"
+
+  - id: R2
+    title: "Conduct comprehensive impact assessment"
+    description: |
+      Impact assessment must take into account criteria including: processing of data 
+      on large scale, sensitivity of data, number of customers affected (including 
+      vulnerable), extent of AI system autonomy, consumer-facing vs internal use, 
+      potential adverse impact on individual rights (e.g., non-discrimination), 
+      insurance-specific criteria (age-based underwriting, financial inclusion impact).
+    actor: A1
+    priority: MUST
+    source: S21
+    confidence: explicit
+    acceptance:
+      - "Impact assessment covers all specified criteria"
+      - "Assessment documented and retained"
+
+  - id: R3
+    title: "Assess prudential considerations"
+    description: |
+      Undertakings must assess prudential considerations including: impact on critical 
+      activities affecting business continuity, impact on financial position (claims, 
+      contracts, Gross Written Premiums, solvency ratios), impact on legal obligations, 
+      and reputational risks from AI system use.
+    actor: A1
+    priority: MUST
+    source: S22
+    confidence: explicit
+    acceptance:
+      - "Prudential impact assessment completed"
+
+  - id: R4
+    title: "Define and document AI governance approach"
+    description: |
+      Undertakings must define and document the approach to use of AI systems across 
+      the organization, including governance and risk management measures applied 
+      throughout the entire AI system lifecycle. May leverage existing Enterprise Risk 
+      Management (ERM), model risk management, or Product Oversight and Governance (POG) 
+      frameworks provided they reflect key principles. The approach must be regularly 
+      reviewed, particularly when number, type, or materiality of AI systems changes.
+    actor: A1
+    priority: MUST
+    source: S28
+    confidence: explicit
+    acceptance:
+      - "AI governance policy documented"
+      - "Policy implemented across organization"
+      - "Regular review schedule established"
+
+  - id: R5
+    title: "Establish clear roles and responsibilities"
+    description: |
+      The AI governance approach must include frameworks where roles and responsibilities 
+      of different staff and the interplay between them are clearly defined.
+    actor: A1
+    priority: SHOULD
+    source: S30
+    confidence: explicit
+    acceptance:
+      - "Roles and responsibilities documented"
+      - "Staff accountability structure defined"
+
+  - id: R6
+    title: "Assume ultimate responsibility for AI systems"
+    description: |
+      Insurance undertakings are ultimately responsible for all AI systems they use, 
+      whether developed in-house or in collaboration with third-party service providers. 
+      Third-party providers must provide adequate information and assurances about 
+      AI system characteristics, capabilities, training/testing data, and limitations. 
+      Where implementing governance measures is challenging due to intellectual property 
+      rights, undertakings must mitigate risks through complementary measures, contract 
+      clauses, service level agreements, external audits, and due diligence testing.
+    actor: A1
+    priority: MUST
+    source: S29
+    confidence: explicit
+    acceptance:
+      - "Third-party agreements include AI governance clauses"
+      - "Due diligence process established"
+      - "Mitigation measures documented"
+
+  - id: R7
+    title: "Adopt customer-centric fairness and ethics approach"
+    description: |
+      Following a risk-based and proportionate approach, undertakings must adopt a 
+      customer-centric approach to AI system use throughout entire lifecycle and value 
+      chain to ensure customers are treated fairly according to their best interests. 
+      Must develop corporate culture documented in policies and procedures that include 
+      ethics and fairness guidance and training for relevant staff.
+    actor: A1
+    priority: MUST
+    source: S32
+    confidence: explicit
+    acceptance:
+      - "Fairness and ethics policies documented"
+      - "Staff training completed"
+      - "Customer-centric approach embedded"
+
+  - id: R8
+    title: "Monitor and audit AI system outcomes"
+    description: |
+      Outcomes of AI systems must be regularly monitored and, where appropriate, audited, 
+      including through use of fairness and non-discrimination metrics.
+    actor: A1
+    priority: MUST
+    source: S35
+    confidence: explicit
+    acceptance:
+      - "Monitoring schedule established"
+      - "Metrics defined and tracked"
+      - "Audit findings documented"
+
+  - id: R9
+    title: "Ensure data governance throughout AI lifecycle"
+    description: |
+      Undertakings must implement data governance policy for AI systems in compliance 
+      with insurance and data protection legislation. Data used for training and testing 
+      must be complete (sufficient historical information), accurate (no material errors), 
+      and appropriate (consistent with intended purposes). Sound data governance must 
+      apply throughout the entire AI system lifecycle for data collection, processing, 
+      and post-processing. Undertakings must make reasonable efforts to remove biases 
+      in data in line with policy.
+    actor: A1
+    priority: MUST
+    source: S21
+    confidence: derived
+    acceptance:
+      - "Data governance policy implemented"
+      - "Data quality standards established"
+      - "Bias mitigation efforts documented"
+
+open_questions:
+  - "What specific fairness and non-discrimination metrics should be used? (Annex I provides examples but selection criteria unclear)"
+  - "How should explainability be adapted for different stakeholder types in practice?"
+  - "What constitutes 'material error' in data quality standards?"
+  - "How frequently should AI system governance approaches be reviewed (annual, event-driven, continuous)?"
+  - "What documentation of bias removal efforts is sufficient?"

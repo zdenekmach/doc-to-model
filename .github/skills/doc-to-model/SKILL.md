@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.12.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.13.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -80,7 +80,7 @@ Konkrétně, od dokumentu k výstupům:
 # 1. INGEST — jen když vstup NENÍ text (.pdf, .docx). U .txt a .md přeskoč.
 python3 scripts/ingest.py --in <dokument> --out inputs/zdroj.txt
 
-# 2. SEGMENT — návrh zdrojových míst, který si sám zkrátíš
+# 2. SEGMENT — návrh VŠECH zdrojových míst; nezkracuj ho
 python3 scripts/segment.py --source inputs/zdroj.txt --out /tmp/sources.yaml
 
 # 3. EXTRACT — TADY PÍŠEŠ MODEL TY. Žádný skript to neudělá.
@@ -112,8 +112,10 @@ Zastav se jen ve třech případech:
 | Brána spadla | ohlas naměřenou hodnotu a příčinu, neobcházej ji `--warn-only` bez souhlasu |
 | Krok 8 REVIEW | předej report děr člověku; tohle je jeho práce, ne tvoje |
 
-Ostatní rozhodnutí uděláš sám. Zkrácení `sources` na místa, na která budeš
-opravdu odkazovat, patří mezi ně — je to úsudek, ne dotaz.
+Ostatní rozhodnutí uděláš sám.
+
+**Výchozí záměr je vymodelovat celý dokument.** Zdrojová místa nezkracuj a
+nevynechávej části zdroje, dokud ti člověk neřekne, že chce jen výřez.
 
 <gate severity="BLOCKER">
 **Krok 3 EXTRACT nesmíš přeskočit ani delegovat.** Bez něj vznikne model bez
@@ -159,9 +161,29 @@ python3 scripts/segment.py --source inputs/zdroj.txt --out /tmp/sources.yaml
 ```
 
 Najde stránky, nadpisy, číslované i římské kapitoly a paragrafy, a vypíše hotový
-blok `sources:` k vložení do modelu. Je to **návrh, ne verdikt** — zkrať ho na
-místa, na která budeš opravdu odkazovat. Zkrácení uděláš sám a pokračuješ; není
-to dotaz na člověka.
+blok `sources:` k vložení do modelu. **Navrhne jich všechna** — výchozí záměr je
+modelovat celý dokument.
+
+<gate severity="BLOCKER">
+**Nezkracuj `sources`, pokud ti to člověk výslovně neřekl.**
+
+Kolik zdrojových míst zavedeš, tolik je **strop pokrytí** modelu. Výrok se nemá
+kam odkázat, tak nevznikne. Vztah je skoro mechanický, naměřeno na témž
+dokumentu o 76 místech:
+
+| Zavedeno `sources` | Strop | Skutečné pokrytí |
+|---:|---:|---:|
+| 65 | 86 % | 80 % |
+| 18 | 24 % | 21 % |
+
+Zkrácení se tedy neprojeví jako „úspornější model", ale jako **mělká extrakce**.
+A ta projde validací i kontrolou opory se samými jedničkami, protože to málo, co
+vytáhla, je doložené. Pozná ji až kontrola pokrytí — tedy až na konci, kdy je
+práce hotová.
+
+Výřez dělej jen tehdy, když padne věta typu „zajímá mě jen kapitola 4". Pak
+`--max` nebo ruční výběr, a skript ti rovnou spočítá, na jaký strop jsi šel.
+</gate>
 
 Skript si své návrhy sám zkusí dohledat toutéž funkcí, kterou pak používá
 prohlížeč i kontrola opory, a nahlásí poměr. Locator, který se nedá zakotvit,
