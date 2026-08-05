@@ -32,6 +32,17 @@ Plné znění pravidel extrakce s příklady:
 
 ## Prostředí
 
+Potřeba je Python 3.11+ a balíčky z `requirements.txt`. Ověř si to takhle:
+
+```bash
+python3 -c "import yaml, docx, linkml_runtime" && which linkml-validate
+```
+
+Když to projde, nic dalšího nezařizuj — balíčky už v systému jsou.
+
+Když to spadne, doinstaluj je. Virtuální prostředí je doporučení, ne podmínka;
+`.venv` v repozitáři být nemusí a jeho aktivace bez něj skončí chybou.
+
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
