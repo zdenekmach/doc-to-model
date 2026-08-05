@@ -568,6 +568,13 @@ Každý požadavek má `source`, nebo je uveden v reportu děr. Netrasovatelný 
 je horší než původní dokument, protože vypadá spolehlivěji.
 </gate>
 
+<gate severity="BLOCKER">
+Pokrytí se počítá jen z **citovaných** zdrojů. Deklarovat místo a neukázat na
+něj žádným výrokem je pro pokrytí totéž jako ho nemít. Binární nálezy
+(nepokrytá místa, necitované zdroje) zapisují `ok: false` i bez `--strict` a
+emitory to nahlas zopakují.
+</gate>
+
 <gate severity="WARNING">
 Report děr, který nic nenašel, u reálného dokumentu znamená spíš mělkou extrakci
 než dokonalý zdroj.
@@ -584,6 +591,7 @@ než dokonalý zdroj.
 | Vzít mělkou extrakci jako hotovou, protože opora vyšla 100 % | Přečíst pokrytí — věrnost je podmínka nutná, ne postačující |
 | Napsat locator jako cestu `Kapitola / Podkapitola` | Doslovný řetězec z dokumentu — cesta se nikdy nenajde |
 | Odepsat zbytek zdroje waiverem, ať metrika sedí | Waiver má důvod, který obstojí před autorem dokumentu |
+| Opsat celou segmentaci do `sources` a citovat z ní zlomek | Zdroj bez výroku z modelu smaž, nebo ho odepiš s důvodem |
 | Ručně dopsat do Wordu, co v modelu chybí | Doplnit model a přegenerovat |
 | Použít na jednorázový dokument | Napsat ho rovnou |
 
