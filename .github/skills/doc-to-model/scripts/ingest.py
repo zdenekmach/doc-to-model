@@ -14,6 +14,9 @@ import argparse
 import sys
 from pathlib import Path
 
+# Pod tímhle výtěžkem to není dokument, ale sken bez textové vrstvy.
+MIN_CHARS = 200
+
 PAGE_MARK = "=== STRANA {n} ==="
 # Pod tuhle hranici znaků na stránku to vypadá na sken bez textové vrstvy.
 THIN_PAGE = 80
@@ -99,8 +102,10 @@ def main():
           f"({len(text)} znaků, {units} stran/odstavců)")
     if note:
         print(f"[POZOR] {note}")
-    if len(text.strip()) < 200:
-        sys.exit("[CHYBA] Z dokumentu skoro nic nevypadlo — extrakce se nepovedla.")
+    if len(text.strip()) < MIN_CHARS:
+        sys.exit(f"[CHYBA] Z dokumentu vypadlo jen {len(text.strip())} znaků "
+                 f"(práh {MIN_CHARS}) — extrakce se nepovedla. "
+                 "U PDF to obvykle znamená sken bez textové vrstvy, který potřebuje OCR.")
     return 0
 
 

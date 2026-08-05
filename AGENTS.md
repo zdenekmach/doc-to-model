@@ -1,19 +1,44 @@
 # AGENTS.md
 
-Postup, kterým se v tomhle repozitáři dělá z dokumentu model, je popsaný ve skillu
-`.github/skills/doc-to-model/SKILL.md`. Přečti si ho dřív, než začneš.
+Postup, kterým se v tomhle repozitáři dělá z dokumentu model, je ve skillu
+`.github/skills/doc-to-model/SKILL.md`. **Ten je zdrojem pravdy — přečti si ho
+dřív, než začneš.**
 
-Zkrácený řetěz:
+Tenhle soubor je rozcestník a čtyři pravidla. Existuje proto, že skill se načítá,
+až když si ho agent vybere; tohle platí i tehdy, když si ho nevybere.
 
 ```
-ingest → segment → EXTRACT (ty) → validate → ground-check → project → review
+ingest → segment → EXTRACT (ty) → validate → ground-check → coverage → project → review
 ```
 
-Tvůj jediný krok je **extrakce**. Zbytek jsou skripty a mají brány — emitor nad
+Tvůj jediný krok je **extrakce**. Zbytek jsou skripty a mají brány: emitor nad
 neověřeným modelem odmítne běžet, takže pořadí nejde obejít.
 
-Tvrdá pravidla: nic, co ve zdroji není, nesmí být fakt; chybějící akceptační kritérium
-je nález, ne mezera k vyplnění; každý výrok nese odkaz do zdroje. Plné znění a příklady
-v `references/extraction.md`.
+## Čtyři pravidla
 
-Prostředí: `source .venv/bin/activate`, spouštět z kořene repozitáře.
+1. **Nic, co ve zdroji není, se nesmí objevit jako fakt.** Doplněné prvky dostanou
+   `confidence: assumed` a patří do reportu děr. Vyplněný model vypadá lépe, a právě
+   proto je domýšlení mezer tichá fabrikace.
+2. **Chybějící akceptační kritérium je nález, ne mezera k vyplnění.** Nedoplňuj ho.
+3. **`locator` je doslovný řetězec z dokumentu.** Nadpis přesně jak stojí, „§ 12",
+   „s. 7". Skládaná cesta `Kapitola / Podkapitola` v dokumentu není, takže se nenajde —
+   pak se nedá ověřit žádný výrok a odskok do zdroje nefunguje nikde.
+4. **Nula si zaslouží druhý pohled.** Report děr bez nálezu, nula normativních vět,
+   nula tvrzení předaných do kontroly rozporů. U reálného dokumentu to obvykle
+   znamená, že něco neproběhlo, ne že je všechno v pořádku.
+
+Plné znění pravidel extrakce s příklady:
+`.github/skills/doc-to-model/references/extraction.md`.
+
+## Prostředí
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Spouštěj z kořene repozitáře. Celý řetěz za extrakcí jedním příkazem:
+
+```bash
+bash build.sh model/<jméno>/model.yaml out inputs/<zdroj>.txt
+```

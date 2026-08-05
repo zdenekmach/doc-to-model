@@ -86,3 +86,9 @@ risks:
     mitigation: ""
 
 open_questions: []       # co zdroj nezodpovídá
+
+# Místa zdroje, která se vědomě nemodelují. Uzavírají smyčku doplňování —
+# bez nich hlásí kontrola pokrytí totéž donekonečna. Důvod je povinný.
+coverage_waivers:
+  - locator: ""          # ve stejném tvaru jako Source.locator
+    reason: ""           # proč se místo nemodeluje

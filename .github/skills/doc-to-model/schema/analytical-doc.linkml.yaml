@@ -133,6 +133,33 @@ classes:
       open_questions:
         multivalued: true
         description: Co zdroj nezodpovídá a musí doplnit člověk.
+      coverage_waivers:
+        range: CoverageWaiver
+        multivalued: true
+        inlined_as_list: true
+        description: >-
+          Místa zdroje, která se vědomě nepromítla do modelu. Uzavírají smyčku
+          doplňování: bez nich by kontrola pokrytí hlásila totéž donekonečna.
+
+  CoverageWaiver:
+    description: >-
+      Vědomé odepsání části zdroje z kontroly pokrytí. Existuje proto, aby se
+      rozhodnutí „tohle modelovat nebudeme" dalo dohledat i s důvodem — globální
+      přepínač na příkazové řádce zapomene, že padlo, i proč.
+
+      Odepisuje se celý segment: nálezy, jejichž řádek do něj spadá, se umlčí
+      napříč všemi třemi metrikami.
+    attributes:
+      locator:
+        required: true
+        description: >-
+          Locator odepisovaného místa, ve stejném tvaru jako `Source.locator`
+          (kapitola, paragraf, strana).
+      reason:
+        required: true
+        description: >-
+          Proč se místo nemodeluje. Povinné záměrně — waiver bez důvodu je
+          tichý souhlas s mělkou extrakcí.
 
   Source:
     description: Místo ve zdrojovém dokumentu, na které se dá odkázat.

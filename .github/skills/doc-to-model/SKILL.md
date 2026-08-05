@@ -1,11 +1,12 @@
 ---
 name: doc-to-model
+license: MIT
 description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pravdu', 'převeď dokument na SSOT', 'z dokumentu vytáhni model', 'document to single source of truth', 'analytický dokument na data', 'z toho dokumentu vygeneruj diagram a word'. Vezme EXISTUJÍCÍ analytický dokument (specifikace, procesní analýza, výklad předpisu, zadání změny) a udělá z něj jednu validovanou instanci strukturované pravdy, ze které deterministicky emituje Word, draw.io diagram, kontext pro AI a report děr. NENÍ to research o doméně (→ /domain-model) ani návrh schématu (→ /data-metamodel) ani těžba dokumentu do učebních rámců (→ /extract)."
 ---
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.6.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.10.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -27,7 +28,7 @@ platí čtyři věci naráz:
 4. **AI dostane kontext, který se dá ověřit** — místo přiloženého PDF strukturovaná fakta
    s odkazy do zdroje.
 
-Rozhodovací hrana (kdy pattern nepoužít) je v `README.md`.
+Rozhodovací hrana (kdy pattern nepoužít) je v `.claude/docs/DATA-PROJECTION-PATTERN.md`.
 U jednorázového dokumentu, ze kterého nic negeneruješ, to nedělej.
 
 ---
@@ -44,17 +45,28 @@ a nad neověřeným nebo mezitím změněným modelem odmítne běžet. Druhý o
 0. VSTUP        → dokument + cíl                          člověk
 1. INGEST       → dokument → text se záchytnými body      skript
 2. SEGMENT      → návrh zdrojových míst (`sources`)       skript
-3. EXTRACT      → instance proti schématu, s citacemi     Claude Code
-4. VALIDATE     → struktura + reference                   skript · BRÁNA
-5. GROUND-CHECK → má požadavek oporu v citovaném místě    skript · BRÁNA
-6. PROJECT      → Word, draw.io, kontext, díry, prohlížeč skript
-7. REVIEW       → projít díry s autorem dokumentu         člověk · BRÁNA
+3. EXTRACT      → instance proti schématu, s citacemi     Claude Code ←──┐
+4. VALIDATE     → struktura + reference                   skript · BRÁNA │
+5. GROUND-CHECK → má výrok oporu v citovaném místě        skript · BRÁNA │
+6. COVERAGE     → promítl se zdroj do modelu              skript ────────┘
+7. PROJECT      → Word, draw.io, kontext, díry, prohlížeč skript      doplnění
+8. REVIEW       → projít díry s autorem dokumentu         člověk · BRÁNA
 ```
 
 Jediný krok, který zůstává na jazykovém modelu, je **EXTRACT**. Všechno před ním
-i za ním je skript, a extrakce má postpodmínku (krok 5), takže se dá zkontrolovat.
+i za ním je skript. Extrakce má **dvě postpodmínky, každou v jiném směru**:
 
-Kroky 4–6 najednou: `bash scripts/build.sh <model.yaml> [out_dir] [zdroj.txt]`.
+| Krok | Ptá se | Chytá |
+|------|--------|-------|
+| 5 GROUND-CHECK | má výrok oporu ve zdroji? (model → zdroj) | požadavek **vymyšlený** |
+| 6 COVERAGE | promítla se věta zdroje do výroku? (zdroj → model) | požadavek **zapomenutý** |
+
+Obě chyby vyrábějí model, který vypadá spolehlivěji než dokument pod ním. Jen
+jedna z nich jde vidět na extrahovaných datech — proto ta druhá kontrola čte
+zdroj, ne model. Mělká extrakce projde validací i kontrolou opory se samými
+jedničkami, protože to málo, co vytáhla, je doložené.
+
+Kroky 4–7 najednou: `bash scripts/build.sh <model.yaml> [out_dir] [zdroj.txt]`.
 Je to zkratka, ne orchestrátor — pořadí platí i bez ní.
 
 ### 0. Vstup
@@ -62,7 +74,8 @@ Je to zkratka, ne orchestrátor — pořadí platí i bez ní.
 Zeptej se na dvě věci, pokud nejsou zřejmé: **který dokument** a **co z něj má vzniknout**
 (dokument, diagram, kontrola konzistence, kontext pro agenta — může být víc).
 
-Cílový adresář: `model/<nazev>/`. Všechny cesty v tomhle dokumentu jsou vůči kořeni repozitáře — spouštěj odtamtud.
+Cílový adresář zvol vedle zdrojového dokumentu, například `model/<nazev>/`.
+Model, jeho stav a výstupy patří k sobě.
 
 Zdrojový dokument ulož nebo odkaž — model bez dohledatelného zdroje je k ničemu.
 
@@ -93,6 +106,26 @@ Skript si své návrhy sám zkusí dohledat toutéž funkcí, kterou pak použí
 prohlížeč i kontrola opory, a nahlásí poměr. Locator, který se nedá zakotvit,
 by byl jen ozdoba u citace.
 
+<gate severity="BLOCKER">
+`locator` je **doslovný řetězec z dokumentu** — nadpis přesně jak stojí, „§ 12",
+„s. 7". Hledá se jako text, takže co v dokumentu není, se nenajde.
+
+Nevymýšlej strukturu, kterou zdroj nemá:
+
+| Nefunguje | Funguje |
+|-----------|---------|
+| `Results / A sparse annotation layer` | `A sparse annotation layer` |
+| `Discussion (limitations section)` | `Discussion` |
+| `Materials and Methods / Data` | `Data` |
+
+Skládaná cesta „rodič / dítě" vypadá pořádněji, ale v dokumentu není. Reálný
+případ: 16 z 22 locatorů se nezakotvilo, všech 20 výroků dostalo „nezakotveno"
+a odskok v prohlížeči nefungoval. Po odříznutí předpon zakotvilo 22 z 22.
+
+Duplicitní nadpis není problém — okno zdroje končí začátkem dalšího
+zakotveného místa, takže sourozenci se nepřelijí do sebe.
+</gate>
+
 ### 3. EXTRACT — naplnění instance
 
 **Tohle dělá Claude Code, ne skript.** Extrakce je LLM operace a běží přes subscription,
@@ -120,7 +153,7 @@ Nic, co ve zdroji není, se nesmí objevit jako fakt. Doplněné prvky mají
 ### 4. VALIDATE
 
 ```bash
-python3 lib/model_validate/validate.py \
+python3 scripts/validate/validate.py \
   --schema schema/analytical-doc.linkml.yaml \
   --data model.yaml --class Document
 ```
@@ -154,8 +187,17 @@ Vymyšlená lhůta je nejtypičtější a nejdražší chyba extrakce.
 | Verdikt | Co s tím |
 |---------|----------|
 | opora | v pořádku |
-| slabá opora · nezakotveno · bez zdroje | projít okem |
+| slabá opora · bez zdroje | projít okem |
 | **bez opory · visící odkaz** | **blokuje** — oprav extrakci |
+
+Kromě verdiktů se hlásí **zakotvenost zdrojů** a ta má vlastní bránu: když se
+ve zdroji najde míň než polovina locatorů, běh skončí. Nezakotvený locator není
+slabý důkaz, je to **žádný** — výrok se nedá ověřit a v prohlížeči neodskočí,
+přitom model navenek vypadá trasovatelně. Do 2026-08-05 to byl jen slabý nález,
+takže model, kde ani jeden z 20 výroků nešel ověřit, prošel a vyrobil Word i web.
+
+Poměr se vypisuje vždycky, i když je v pořádku — bez naměřené hodnoty v logu se
+nepozná rozdíl mezi „locatory sedí" a „nikdo je neměřil".
 
 Planý poplach se odbaví `--warn-only`, ale ne mlčky: report `<model>-opora.md`
 zůstává a je v něm vidět, co se přeskočilo.
@@ -165,7 +207,93 @@ Nespouštěj emitory, dokud ground-check neprošel — pokud existuje zdrojový 
 Bez něj emitory poběží, ale nahlas upozorní, že výstup nemá ověřenou oporu.
 </gate>
 
-### 6. PROJECT
+### 6. COVERAGE — promítl se zdroj do modelu?
+
+```bash
+python3 scripts/coverage_check.py --model model.yaml --source zdroj.txt
+```
+
+Druhá postpodmínka extrakce, opačným směrem než kontrola opory. Tři metriky
+od nejhrubší po nejcennější:
+
+| Metrika | Co hlásí |
+|---------|----------|
+| Nepokrytá místa | segment zdroje, na který neukazuje žádný `source` |
+| **Osiřelá čísla** | číslo ve zdroji, které není v žádném výroku |
+| Nepokryté normativní věty | věta s „musí / nesmí / má právo", jejíž slova v modelu nejsou |
+
+Osiřelá čísla jsou nejsilnější signál. Lhůta, částka a počet jsou to nejdražší,
+co se dá při extrakci ztratit, a zároveň to, co se očima kontroluje nejhůř.
+
+#### Jazyk zdroje
+
+Obě kontroly potřebují vědět, která slova jsou v daném jazyce výplň a čím se
+pozná normativní věta. Bydlí to v `lang/<kód>.yaml`, ne v kódu — přidat jazyk
+znamená přidat soubor.
+
+Jazyk se **detekuje ze zdroje**: každý balíček se oskóruje podle svých vlastních
+stopwordů a vyhraje nejvyšší zásah na tisíc slov. Volbu i naměřený žebříček
+vypíše běh a nese ji i report. `--lang <kód>` detekci obejde.
+
+<gate severity="BLOCKER">
+Když žádný balíček nepřekročí práh, kontrola **skončí chybou**. Nedopočítávej
+ji ručně a nevydávej její čísla dál — na cizí jazyk se stopwordy nechytnou,
+takže shoda se nafoukne a normativních vět se najde nula. Nula se čte jako
+„všechno pokryto", ne jako „neumím ten jazyk".
+</gate>
+
+Když na neznámý jazyk narazíš, **založ balíček** `lang/<kód>.yaml`:
+
+```yaml
+code: de
+name: Deutsch
+source: generated     # POVINNĚ, když balíček vzniká za běhu
+stopwords: [der, die, das, und, ist, ...]        # výplňová slova, ~40 stačí
+normative_patterns: ['muss', 'darf\s+nicht', 'ist\s+verpflichtet', ...]
+```
+
+`source: generated` znamená „vymyslel to model, nikdo to neověřil" a report to
+u čísel vypíše. Balíček, který někdo prošel, přepiš na `builtin`. Bez toho
+rozlišení si za tři měsíce nebudeš jistý, čemu ta čísla odpovídají.
+
+Hranice slova doplňuje loader kolem celé skupiny sám — do vzorů je nepiš.
+
+**Neblokuje.** Preambule, definice pojmů nebo přechodná ustanovení zůstávají
+nepokryté zcela legitimně, takže tvrdá brána by lidi natlačila na vypínač a
+shodila i nálezy, které stojí za pohled. `--strict` existuje pro evals.
+
+#### Doplňovací smyčka
+
+Nález znamená vrátit se k extrakci — ale **cíleně, ne novým průchodem**. Report
+pojmenuje locator, číslo řádku i konkrétní větu, takže se přidávají výroky pro
+konkrétní místa. Opakovaná extrakce celého dokumentu by přečíslovala id a
+zahodila ruční opravy z kroku 8.
+
+Smyčka končí na **úsudku, ne na procentu**. Sto procent je špatný cíl: kdyby se
+honilo číslo, extrakce si začne vymýšlet požadavky, aby metriku nasytila — a to
+je přímý útok na hlavní slib skillu z kroku 3. Každý nález se proto buď
+doextrahuje, nebo vědomě odepíše:
+
+```yaml
+coverage_waivers:
+  - locator: "1. Úvodní ustanovení"
+    reason: "Preambule, neplyne z ní požadavek."
+```
+
+Odepisuje se celý segment — umlčí nálezy napříč všemi třemi metrikami. `reason`
+je povinný, protože waiver bez důvodu je tichý souhlas s mělkou extrakcí. Waiver,
+jehož locator se ve zdroji nedá zakotvit, se hlásí a neumlčuje nic.
+
+Dva doplňovací průchody stačí. Když ani po nich pokrytí nedává smysl, problém
+není v extrakci, ale ve volbě dokumentu nebo schématu.
+
+<gate severity="WARNING">
+Pokrytí pod polovinou míst u dokumentu, který má být modelován celý, znamená
+mělkou extrakci — ne hotový model. Odepsat zbytek waiverem jde, ale důvod bude
+muset obstát před autorem dokumentu v kroku 8.
+</gate>
+
+### 7. PROJECT
 
 ```bash
 bash scripts/build.sh model.yaml [out_dir] [zdroj.txt]
@@ -191,7 +319,7 @@ i samotná stránka, takže se nedá splést domněnka s ověřenou stopou.
 Zdrojový text předej jako třetí argument (`.md` / `.txt`; PDF si napřed vytáhni).
 Bez něj se prohlížeč vygeneruje také, jen bez levého panelu.
 
-### 7. REVIEW
+### 8. REVIEW
 
 Report děr projdi s autorem dokumentu. Není to seznam chyb extrakce, je to seznam
 míst, kde původní dokument mlčí. To bývá cennější než vygenerovaný Word.
@@ -210,8 +338,21 @@ kolekce a obě mohou být neprázdné zároveň.
 | | `claims` — tvrzení | `requirements` — požadavek |
 |---|---|---|
 | Odpovídá na | jak to je | co se má stát |
-| Vlastní pole | `claim_type`, `basis`, `subject`, `scope` | `priority`, `acceptance`, `actor` |
+| Vlastní pole | `claim_type`, `basis`, **`subject`, `predicate`, `value`, `scope`** | `priority`, `acceptance`, `actor` |
 | Společné | `id`, `title`, `description`, `source`, `confidence` (třída `Statement`) | totéž |
+
+Ta čtveřice `subject` · `predicate` · `value` · `scope` je celek, ne výběr.
+Rozkládá tvrzení na části, které umí porovnat stroj — bez ní tvrzení do kontroly
+rozporů nedojde, protože není co s čím porovnat.
+
+| Věta ze zdroje | subject | predicate | value | scope |
+|----------------|---------|-----------|-------|-------|
+| „Anotace nese 612 lokusů miRNA." | anotace miRNA | počet lokusů | 612 | Ensembl Protists 59 |
+| „Hlášení se odesílá do 20. dne." | měsíční hlášení | lhůta odeslání | 20. den následujícího měsíce | JMHZ |
+| „Rodinnou homologií se potvrdí 46–48 %." | pozitivní kontrola | míra potvrzení | 46–48 % | C. elegans, A. thaliana |
+
+`scope` je povinný proto, že chrání před falešným poplachem: 30 dnů u jednoho
+rozsahu a 90 u jiného není rozpor.
 
 **Rozhodovací otázka při extrakci:** *říká ta věta, co se má stát, nebo jak to je?*
 Normativní věta je požadavek, popisná je tvrzení. Když to nejde rozhodnout, volí se
@@ -265,7 +406,7 @@ stejném rozsahu s jinou hodnotou je tvrdý rozpor. `emit_claims.py` je to rozhr
 
 ```bash
 python3 scripts/emit_claims.py --model model.yaml --out out/claims.json
-# claims.json je vstup pro kontrolu rozporů (deterministická vrstva)
+python3 11-Client-Projects/generali-beanz/kompilator/check.py out/claims.json
 ```
 
 Smysl není ušetřit práci, ale **nemít dvě verze pravdy**. Kdyby kontrola rozporů
@@ -324,6 +465,9 @@ než dokonalý zdroj.
 |-----------|------------|
 | Doplnit chybějící akceptační kritérium, ať model vypadá úplně | Nechat prázdné a vykázat v dírách |
 | Extrahovat všechno, protože to jde | Extrahovat to, z čeho se něco emituje |
+| Vzít mělkou extrakci jako hotovou, protože opora vyšla 100 % | Přečíst pokrytí — věrnost je podmínka nutná, ne postačující |
+| Napsat locator jako cestu `Kapitola / Podkapitola` | Doslovný řetězec z dokumentu — cesta se nikdy nenajde |
+| Odepsat zbytek zdroje waiverem, ať metrika sedí | Waiver má důvod, který obstojí před autorem dokumentu |
 | Ručně dopsat do Wordu, co v modelu chybí | Doplnit model a přegenerovat |
 | Použít na jednorázový dokument | Napsat ho rovnou |
 
@@ -336,15 +480,24 @@ než dokonalý zdroj.
 | `schema/analytical-doc.linkml.yaml` | Schéma instance |
 | `scripts/ingest.py` | Dokument (PDF/Word/text) → text se záchytnými body |
 | `scripts/segment.py` | Návrh zdrojových míst + self-check zakotvitelnosti |
-| `scripts/ground_check.py` | Postpodmínka extrakce — opora tvrzení ve zdroji |
+| `scripts/ground_check.py` | Postpodmínka extrakce — opora tvrzení ve zdroji (model → zdroj) |
+| `scripts/coverage_check.py` | Postpodmínka extrakce — pokrytí zdroje modelem (zdroj → model) |
 | `scripts/pipeline_state.py` · `mark_step.py` | Brány mezi kroky (`<model>.state.json`) |
 | `scripts/sourcemap.py` | Locator → řádky; sdílí prohlížeč i kontrola opory |
-| `scripts/build.sh` | Zkratka pro kroky 2–4 |
+| `scripts/lang.py` · `lang/*.yaml` | Jazykové balíčky — stopwordy a normativní značky jako data |
+| `scripts/build.sh` | Zkratka pro kroky 4–7 (validace → opora → pokrytí → projekce) |
 | `scripts/emit_word.py` · `emit_drawio.py` · `emit_context.py` · `emit_viewer.py` · `emit_claims.py` | Emitory |
 | `references/extraction.md` | Jak extrahovat věrně (pravidla, příklady, pasti) |
+| `scripts/validate/` | Validátor (L1 linkml-validate, L2 referenční) — vendorovaný, ne systémový |
 | `templates/model-skeleton.yaml` | Kostra instance k vyplnění |
 
 ## Viz také
 
-- `README.md` — instalace, spuštění, rozhodovací hrana patternu
-- `/doc-consistency` (PersonalSkills) — kontrola sémantických rozporů, navazuje na `emit_claims.py`
+Skill je výřez z většího celku a tyhle sousedy s sebou nenese:
+
+- **návrh schématu**, když `analytical-doc` na dokument nesedí
+- **plnění modelu z researche** místo z jednoho hotového dokumentu
+- **kontrola rozporů** nad `*-claims.json`, který emituje `emit_claims.py`
+
+Emitor tvrzení tu zůstal schválně: jeho výstup je vstup pro takovou kontrolu,
+ať už ji pustíš čímkoli.

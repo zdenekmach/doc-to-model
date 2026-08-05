@@ -28,7 +28,14 @@ def load(model: Path) -> dict:
         return {}
     try:
         return json.loads(p.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError) as e:
+        # Prázdno je správná odpověď (další krok se zastaví), ale MLČET není:
+        # bez tohohle řádku se poškozený stav tváří jako „ještě neproběhlo" a
+        # člověk dostane radu spustit validaci místo pravdy o rozbitém souboru.
+        # První přepis stavu pak stopu po poškození zahladí.
+        print(f"[POZOR] stav {p.name} se nedá přečíst ({type(e).__name__}: {e}) — "
+              "beru ho jako prázdný, kroky se budou muset zopakovat.",
+              file=sys.stderr)
         return {}
 
 

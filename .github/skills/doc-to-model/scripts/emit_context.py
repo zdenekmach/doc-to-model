@@ -282,15 +282,27 @@ def main():
 
     m = load(args.model)
 
+    reqs = len(m.get("requirements") or []) + len(m.get("quality_requirements") or [])
+    claims = len(m.get("claims") or [])
+
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(render_context(m), encoding="utf-8")
-    print(f"[OK] kontext: {args.out}")
+    print(f"[OK] kontext: {args.out} ({reqs} požadavků · {claims} tvrzení)")
 
     if args.gaps:
         gaps = collect_gaps(m)
         args.gaps.parent.mkdir(parents=True, exist_ok=True)
         args.gaps.write_text(render_gaps(m, gaps), encoding="utf-8")
         print(f"[OK] díry: {args.gaps} ({len(gaps)} nálezů)")
+
+        # Prázdný report děr je podezřelý, ne pochvalný. Reálné dokumenty díry
+        # mají; nula obvykle znamená mělkou extrakci, ne dokonalý zdroj. Stálo
+        # to v SKILL.md jako varování, ale ne tam, kde to člověk čte — v běhu.
+        if not gaps and (reqs or claims):
+            print("  [POZOR] report děr nenašel nic. U reálného dokumentu to spíš "
+                  "znamená mělkou extrakci než bezchybný zdroj —")
+            print("          projdi, jestli má každý požadavek akceptační kritérium "
+                  "a jestli model pokrývá celý dokument.")
     return 0
 
 

@@ -295,10 +295,22 @@ def main():
     warn_if_missing(args.model, "ground-check",
                     "výstup může nést tvrzení bez opory ve zdroji")
 
-    doc = build(load(args.model))
+    m = load(args.model)
+    doc = build(m)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     doc.save(args.out)
-    print(f"[OK] Word: {args.out}")
+
+    # Počty, ne jen cesta. Word z jednoho požadavku vypadal v logu stejně jako
+    # ze dvou set — a tenhle řádek je často jediné, co člověk z běhu přečte.
+    reqs = len(m.get("requirements") or []) + len(m.get("quality_requirements") or [])
+    claims = len(m.get("claims") or [])
+    steps = len((m.get("process") or {}).get("steps") or [])
+    print(f"[OK] Word: {args.out} "
+          f"({reqs} požadavků · {claims} tvrzení · {steps} kroků procesu)")
+
+    if not reqs and not claims:
+        print("  [POZOR] dokument nenese žádný požadavek ani tvrzení — "
+              "vznikl formálně správný, ale prázdný výstup.")
     return 0
 
 

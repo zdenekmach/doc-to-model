@@ -1,116 +1,160 @@
 # doc-to-model
 
-Z hotového analytického dokumentu udělá **jednu validovanou strukturovanou pravdu**,
-ze které se deterministicky generuje Word, diagram, kontext pro AI a **report děr** —
-tedy seznam míst, kde původní dokument mlčí.
+Vezme hotový analytický dokument — požadavkovou specifikaci, procesní analýzu,
+výklad předpisu — a udělá z něj jednu validovanou datovou instanci. Z ní pak
+deterministicky vypadne Word, diagram, kontext pro agenta a **report děr**.
 
-Není to sumarizátor. Chatbot vám dokument shrne; tenhle řetěz vám řekne, **co v něm není**
-a **kde každé tvrzení stojí ve zdroji**.
+Nejde o sumarizaci. Jde o to převést text na strukturu, kterou umí zkontrolovat
+stroj, a ukázat, co v původním dokumentu chybí.
 
 ## Proč
 
-| Bez modelu | S modelem |
-|---|---|
-| Diagram a text se rozejdou | Obojí se generuje z týchž dat |
-| Kontrola je názor | Akceptační kritérium je pole v modelu |
-| Nevíte, co v dokumentu chybí | Model umí říct, kde sám nedrží |
-| AI dostane přiložené PDF | AI dostane strukturovaná fakta s odkazy do zdroje |
+Analytický dokument je špatná jednotka práce. Nedá se z něj ověřit, jestli si
+neodporuje, jestli má každý požadavek akceptační kritérium, ani jestli se
+diagram v příloze pořád shoduje s textem. Když se z něj udělá instance proti
+schématu, jde všechno tohle zkontrolovat příkazem — a všechny výstupy se
+generují z jednoho místa, takže se nemůžou rozejít.
 
-**Kdy to nedělat:** u jednorázového dokumentu, ze kterého nic negenerujete. Napište ho rovnou.
+Extrakce je jediný krok, který dělá jazykový model. Všechno před ní i za ní je
+skript, a ta extrakce má **dvě postpodmínky, každou v opačném směru**:
+
+| Kontrola | Ptá se | Chytá |
+|----------|--------|-------|
+| `ground_check.py` | má výrok oporu ve zdroji? (model → zdroj) | požadavek **vymyšlený** |
+| `coverage_check.py` | promítla se věta zdroje do výroku? (zdroj → model) | požadavek **zapomenutý** |
+
+Ta druhá je důležitější, než vypadá. Mělká extrakce projde validací i kontrolou
+opory se samými jedničkami, protože to málo, co vytáhla, je doložené.
 
 ## Instalace
 
-Potřebujete Python 3.12 a [uv](https://docs.astral.sh/uv/) (nebo obyčejné `venv` + `pip`).
+Potřebuješ Python 3.11+.
 
 ```bash
-uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python -r requirements.txt
-source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-## Zdrojové dokumenty
-
-Adresář `inputs/` **není ve verzích** — jsou to cizí texty, ne naše práce, a repozitář
-si je nedrží v kopii. Místo kopie je tu nástroj, kterým si je vyrobíte:
+Ověř, že je `linkml-validate` v PATH — bez něj se strukturální validace přeskočí
+a řekne to nahlas:
 
 ```bash
-python3 utils/build-vyrez.py     # → inputs/aiact-pojisteni.md + .txt
+linkml-validate --help
 ```
 
-Stáhne úřední české znění nařízení (EU) 2024/1689 z EUR-Lexu a složí z něj výřez
-pro pojišťovnu: přílohu III bod 5 a navazující články o povinnostech zavádějícího
-subjektu. Text přebírá doslova, včetně kazů úředního převodu — výřez, který se
-tiše rozejde se zdrojem, je horší než žádný.
+## Spuštění z GitHub Copilot CLI
 
-Z markdownu si ještě vyrobte text se záchytnými body, na který míří citace:
+Copilot CLI hledá skilly mimo jiné v `.claude/skills`, což je přesně tam, kde
+tenhle leží. Nic se nikam nekopíruje.
 
 ```bash
-python3 scripts/ingest.py --in inputs/aiact-pojisteni.md --out inputs/aiact-pojisteni.txt
+npm install -g @github/copilot     # Node 22+, aktivní Copilot předplatné
+cd doc-to-model
+copilot
 ```
 
-## Ověření, že to běží
+V session se přihlas přes `/login` a zkontroluj, že skill vidí:
+
+```
+/skills list
+/skills info doc-to-model
+```
+
+Pak stačí říct, co chceš:
+
+```
+Vezmi dokument specifikace.pdf a udělej z něj model podle skillu doc-to-model.
+```
+
+Skript v skillu neběží sám od sebe — Copilot se u shellových příkazů ptá na
+potvrzení. To je správně; předschvalovat `shell` má smysl až u skillu, kterému
+plně důvěřuješ.
+
+## Spuštění z Claude Code
+
+Stejná složka, žádná úprava:
 
 ```bash
-bash scripts/build.sh model/aiact-pojisteni/aiact-pojisteni.yaml \
-     model/aiact-pojisteni/out inputs/aiact-pojisteni.txt
+cd doc-to-model
+claude
 ```
 
-Projde validace, ověří se opora tvrzení ve zdroji a vygeneruje se Word, diagram,
-kontext, report děr a prohlížeč. Na přiloženém modelu má vyjít **27 z 27 výroků
-s oporou** a **12 nálezů** v reportu děr. Prohlížeč (`out/prohlizec.html`) je
-nejrychlejší způsob, jak pattern ukázat někomu, kdo ho nezná.
+Skill se aktivuje sám podle popisu ve frontmatteru, nebo si ho vyžádej jménem.
 
-## Řetěz
+## Spuštění bez agenta
 
-```
-0. VSTUP        → dokument + cíl                          člověk
-1. INGEST       → dokument → text se záchytnými body      skript
-2. SEGMENT      → návrh zdrojových míst                   skript
-3. EXTRACT      → instance proti schématu, s citacemi     AI agent
-4. VALIDATE     → struktura + reference                   skript · BRÁNA
-5. GROUND-CHECK → má tvrzení oporu v citovaném místě      skript · BRÁNA
-6. PROJECT      → Word, draw.io, kontext, díry, prohlížeč skript
-7. REVIEW       → projít díry s autorem dokumentu         člověk · BRÁNA
+Extrakci musí udělat člověk nebo model, zbytek řetězu je skript. Když už model
+máš, druhá polovina je jeden příkaz:
+
+```bash
+bash build.sh model/<jméno>/model.yaml out inputs/zdroj.txt
 ```
 
-**Na jazykovém modelu zůstává jediný krok — extrakce.** Všechno před ním i za ním
-je skript, takže se to dá zkontrolovat. Krok 5 je postpodmínka extrakce: ověří, že
-si model nevymyslel lhůtu, která v citovaném odstavci není.
+Projde validací, oběma kontrolami a vygeneruje všechny projekce. Bez třetího
+argumentu se kontroly přeskočí a emitory to vypíšou jako varování.
 
-Brány nedrží dobrá vůle, ale skripty. Každý krok zapíše výsledek a otisk modelu do
-`<model>.state.json`; emitor nad neověřeným nebo mezitím změněným modelem odmítne běžet.
+Jednotlivé kroky umí `--help`:
 
-Plný popis včetně pravidel extrakce: [`.github/skills/doc-to-model/SKILL.md`](.github/skills/doc-to-model/SKILL.md).
+```bash
+python3 .github/skills/doc-to-model/scripts/ingest.py --help
+python3 .github/skills/doc-to-model/scripts/coverage_check.py --help
+```
 
-## Použití s AI agentem
+## Co je uvnitř
 
-Repozitář je připravený jako **agent skill** — Copilot i Claude Code si instrukce
-načtou samy:
-
-| Kde | Co to je |
-|---|---|
-| `.github/skills/doc-to-model/SKILL.md` | Agent Skill (GitHub Copilot) |
-| `.claude/skills/doc-to-model` | symlink na totéž (Claude Code) |
-| `.github/copilot-instructions.md` | repo-wide kontext pro Copilot Chat i agenta |
-| `AGENTS.md` | otevřený cross-vendor standard |
-
-Stačí říct agentovi: *„vezmi `inputs/<dokument>` a udělej z něj model podle skillu
-doc-to-model"*. Kroky 1–2 a 4–6 spustí jako skripty, krok 3 udělá sám.
-
-## Struktura
+Repozitář má **dvě části a záměrně je nemíchá**.
 
 ```
-schema/analytical-doc.linkml.yaml   schéma instance (LinkML)
-scripts/                            ingest, segment, ground-check, emitory
-lib/model_validate/                 sdílený validátor L1 (LinkML) + L2 (reference)
-references/extraction.md            jak extrahovat věrně — pravidla, příklady, pasti
-templates/model-skeleton.yaml       kostra instance k vyplnění
-utils/build-vyrez.py                sestaví zdrojový výřez z EUR-Lexu
-inputs/                             zdrojové dokumenty (neverzované)
-model/<nazev>/                      instance + out/ s projekcemi
+.github/skills/doc-to-model/   ← SYNCHRONIZOVANÉ ze zdrojového systému
+  SKILL.md                     postup, brány mezi kroky, anti-vzory
+  schema/                      LinkML schéma instance
+  scripts/                     ingest, segmentace, kontroly, emitory
+  scripts/validate/            validátor L1+L2 (vendorovaný)
+  lang/                        jazykové balíčky kontrol
+  references/extraction.md     jak extrahovat věrně
+  templates/                   kostra instance k vyplnění
+
+.claude/skills/doc-to-model    symlink na výše — jedno místo, dvě cesty
+
+AGENTS.md · README.md · build.sh · requirements.txt · utils/ · tools/
+                               ← VLASTNÍ, tady se udržují
 ```
+
+Ta hranice není kosmetická. Všechno pod `.github/skills/doc-to-model/` se
+přepisuje synchronizací a ruční úpravy tam nepřežijí — patří do zdrojového
+systému, nebo do transformací v `tools/adapt.py`. Zbytek repozitáře je jeho
+vlastní a synchronizace se ho nedotkne.
+
+Pořadí kroků nedrží žádný wrapper — vynucují ho samotné skripty přes
+`<model>.state.json` s otiskem modelu. Emitor nad neověřeným nebo mezitím
+změněným modelem odmítne běžet.
+
+## Schéma
+
+Modelovací jazyk je [LinkML](https://linkml.io). Validace má dvě vrstvy:
+**L1** strukturální dělá `linkml-validate` (enumy, povinná pole, typy,
+kardinalita), **L2** referenční je vlastní (unikátnost id, visící odkazy mezi
+prvky) — to LinkML sám neřeší.
+
+Vlastní schéma jde podstrčit čtvrtým argumentem `build.sh`. Emitory vypíšou i
+kolekce, které `analytical-doc` nezná, místo aby je tiše zahodily.
+
+## Původ
+
+Skill vznikl jako součást většího osobního systému a tohle je jeho samostatný
+výřez. Nenese s sebou sousední nástroje na návrh schématu, plnění modelu
+z researche ani kontrolu rozporů. Emitor tvrzení (`emit_claims.py`) tu zůstal
+schválně — jeho `*-claims.json` je vstup pro takovou kontrolu, ať už ji pustíš
+čímkoli.
+
+Aktualizace skillu ze zdrojového systému: `tools/sync-from-personalskills.sh`.
+Přenese jen synchronizovanou část, odpojí ji od okolí (`tools/adapt.py`) a ověří,
+že po ní nezbyla žádná vazba na systém, ze kterého přišla.
+
+`utils/build-vyrez.py` sestaví výřez AI Actu pro pojišťovnictví přímo z EUR-Lexu.
+Výřez tedy není ruční výtah — dá se přegenerovat a ověřit proti zdroji, což je
+zároveň ukázka toho, o čem je zbytek repozitáře.
 
 ## Licence
 
-Skripty a schéma: MIT. Zdrojové dokumenty v `inputs/` mají vlastní režim — texty
-předpisů EU jsou veřejné, cokoli klientského sem nepatří.
+MIT — viz [LICENSE](LICENSE). Repo neobsahuje kód třetích stran, takže tě
+neváže žádná další atribuce.

@@ -448,6 +448,14 @@ def main():
     )
     if lines:
         print(f"[OK] prohlížeč: {args.out} (zakotveno {anchored}/{len(sources)} zdrojů)")
+        # Prohlížeč se dá spustit i mimo build.sh, kde bránu zakotvenosti drží
+        # ground_check. Bez tohohle řádku by vznikla stránka, kde odskok nikam
+        # nevede, a v logu by stálo jen [OK].
+        if sources and not anchored:
+            print("  [POZOR] nezakotvil se ani jeden zdroj — odskok z výroku do textu "
+                  "nebude fungovat nikde.")
+            print("          `locator` musí být doslovný řetězec z dokumentu, "
+                  "ne skládaná cesta „Rodič / Dítě\".")
     else:
         print(f"[OK] prohlížeč: {args.out} (bez zdrojového textu)")
     return 0

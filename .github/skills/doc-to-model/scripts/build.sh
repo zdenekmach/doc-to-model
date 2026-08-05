@@ -20,10 +20,10 @@ OUT_DIR="${2:-$(dirname "$MODEL")/out}"
 SOURCE_TXT="${3:-}"
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_ROOT="$SKILL_DIR"
 SCHEMA="${4:-$SKILL_DIR/schema/analytical-doc.linkml.yaml}"
-VALIDATE="$REPO_ROOT/lib/model_validate/validate.py"
 S="$SKILL_DIR/scripts"
+# Validátor je vendorovaný uvnitř skillu — skill musí běžet bez okolního repa.
+VALIDATE="$S/validate/validate.py"
 
 BASE="$(basename "${MODEL%.*}")"
 
@@ -34,6 +34,12 @@ python3 "$S/mark_step.py" --model "$MODEL" --step validate
 if [[ -n "$SOURCE_TXT" ]]; then
   echo "── Opora ve zdroji ─────────────────────────────────"
   python3 "$S/ground_check.py" --model "$MODEL" --source "$SOURCE_TXT"
+
+  # Druhá postpodmínka extrakce, opačný směr: promítl se zdroj do modelu?
+  # Neblokuje — vynechaná preambule je legitimní, mělká extrakce ne, a rozdíl
+  # mezi nimi pozná jen člověk nad reportem.
+  echo "── Pokrytí zdroje ──────────────────────────────────"
+  python3 "$S/coverage_check.py" --model "$MODEL" --source "$SOURCE_TXT"
 fi
 
 echo "── Projekce ────────────────────────────────────────"

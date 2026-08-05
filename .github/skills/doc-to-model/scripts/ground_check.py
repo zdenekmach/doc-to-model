@@ -27,6 +27,7 @@ from pathlib import Path
 import yaml
 
 from pipeline_state import record
+import lang
 from sourcemap import anchor_sources, source_windows
 
 STEM = 5
@@ -34,16 +35,34 @@ MIN_TOKEN = 4
 OK_RATIO = 0.34
 WEAK_RATIO = 0.15
 
-# Slova, která nesou málo rozlišovací síly — kdyby se počítala, „opora" by
-# vznikla i tam, kde se jen potkaly spojky.
-STOP = {
-    "který", "která", "které", "kteří", "kterou", "kterých", "jejich", "svých",
-    "tento", "tato", "toto", "této", "tohoto", "těchto", "podle", "podle",
-    "musí", "může", "budou", "bude", "byla", "byly", "bylo", "jsou", "není",
-    "nebo", "také", "však", "aby", "ale", "pro", "před", "přes", "při", "nad",
-    "pod", "ode", "ode", "dne", "dnů", "všech", "každý", "každé", "další",
-    "systém", "systému", "údaje", "údajů", "případě", "rámci", "vztahu",
-}
+# Kolik zdrojových míst se musí dát ve zdroji najít, aby model vůbec dával smysl.
+# Nezakotvený locator neznamená slabý důkaz, znamená ŽÁDNÝ — nedá se ověřit
+# a v prohlížeči neodskočí. Do 2026-08-05 se to počítalo jen jako slabý nález,
+# takže model, kde ani jeden z 20 výroků nešel ověřit, prošel branou a vyrobil
+# Word i web (reálný případ: locatory ve tvaru „Rodič / Dítě", které v dokumentu
+# doslova nejsou).
+ANCHOR_MIN_RATIO = 0.5
+
+# Slova bez rozlišovací síly i značky normativních vět bydlí v `lang/<kód>.yaml`.
+# Dokud to byly konstanty tady, dokument v jiném jazyce tiše prošel — nic se
+# neodfiltrovalo, takže se shoda nafoukla. Viz lang.py.
+_PACK = None
+
+
+def use_pack(pack) -> None:
+    """Nastav jazyk pro tenhle běh. Volá se jednou, na začátku."""
+    global _PACK
+    _PACK = pack
+
+
+def active_pack():
+    if _PACK is None:
+        # Prázdný stopword list by nespadl, jen by tiše zhoršil výsledek —
+        # a to je přesně ta třída chyb, kvůli které jazykové balíčky vznikly.
+        raise RuntimeError(
+            "jazykový balíček nebyl nastaven — zavolej use_pack() (viz lang.resolve)"
+        )
+    return _PACK
 
 
 def load(path: Path) -> dict:
@@ -61,7 +80,7 @@ def stems(text: str):
     for tok in re.findall(r"[0-9]+(?:[.,][0-9]+)?|[^\W\d_]+", (text or "").lower()):
         if tok[0].isdigit():
             numbers.add(tok.rstrip(".,"))
-        elif len(tok) >= MIN_TOKEN and tok not in STOP:
+        elif len(tok) >= MIN_TOKEN and tok not in active_pack().stopwords:
             words.add(tok[:STEM])
     return words, numbers
 
@@ -161,13 +180,18 @@ def main():
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--warn-only", action="store_true",
                     help="Nálezy jen vypiš, nekonči chybou.")
+    ap.add_argument("--lang", help="Kód jazykového balíčku (default: detekce ze zdroje).")
     args = ap.parse_args()
 
     if args.source.suffix.lower() == ".pdf":
         sys.exit("[CHYBA] --source čeká text. PDF si napřed vytáhni do .txt.")
 
     m = load(args.model)
-    lines = args.source.read_text(encoding="utf-8").splitlines()
+    raw = args.source.read_text(encoding="utf-8")
+    pack, how = lang.resolve(raw, args.lang)
+    use_pack(pack)
+    print(f"[jazyk] {how}")
+    lines = raw.splitlines()
     sources = by_id(m.get("sources"))
     anchors = anchor_sources(lines, sources)
     windows = source_windows(lines, anchors)
@@ -186,18 +210,40 @@ def main():
     bad = [r for r in results if r["verdict"] in ("bez opory", "visící odkaz")]
     weak = [r for r in results if r["verdict"] in ("slabá opora", "nezakotveno", "bez zdroje")]
 
+    # Zakotvenost se hlásí VŽDY, i když je v pořádku. Naměřená hodnota v logu je
+    # jediné, čím se pozná rozdíl mezi „locatory sedí" a „nikdo je neměřil".
+    anchored = sum(1 for v in anchors.values() if v is not None)
+    ratio = anchored / len(anchors) if anchors else 1.0
+    anchors_bad = bool(anchors) and ratio < ANCHOR_MIN_RATIO
+
     if args.json:
-        print(json.dumps({"results": results, "blocking": len(bad)},
+        print(json.dumps({"results": results, "blocking": len(bad),
+                          "anchored": anchored, "sources": len(anchors)},
                          ensure_ascii=False, indent=2))
     else:
         print(f"[opora] ověřeno {len(results)} výroků → {out}")
-        print(f"  bez opory / visící odkaz: {len(bad)} · k prohlédnutí: {len(weak)}")
+        print(f"  zakotveno {anchored}/{len(anchors)} zdrojů "
+              f"({ratio * 100:.0f} %) · bez opory / visící odkaz: {len(bad)} · "
+              f"k prohlédnutí: {len(weak)}")
         for r in bad:
             print(f"  ✗ {r['id']}: {r['note']}")
 
-    ok = not bad or args.warn_only
+    ok = (not bad and not anchors_bad) or args.warn_only
     record(args.model, "ground-check", ok=ok,
-           detail={"blocking": len(bad), "weak": len(weak), "total": len(results)})
+           detail={"blocking": len(bad), "weak": len(weak), "total": len(results),
+                   "anchored": anchored, "sources": len(anchors)})
+
+    if anchors_bad and not args.warn_only:
+        sys.exit(
+            f"\n[BRÁNA] ve zdroji se našlo jen {anchored} z {len(anchors)} "
+            f"zdrojových míst ({ratio * 100:.0f} %, práh {ANCHOR_MIN_RATIO * 100:.0f} %).\n"
+            "Nezakotvený locator znamená, že se výrok nedá ověřit a v prohlížeči\n"
+            "neodskočí — model vypadá trasovatelně, ale není.\n"
+            "`locator` musí být DOSLOVNÝ řetězec z dokumentu (nadpis, „§ 12\", „s. 7\").\n"
+            "Skládaná cesta „Rodič / Dítě\" ani dopsaná glosa v závorce v dokumentu\n"
+            "nejsou, takže se nenajdou. Návrhy, které se zakotvit dají, vypíše\n"
+            "scripts/segment.py."
+        )
 
     if bad and not args.warn_only:
         sys.exit(

@@ -1,0 +1,68 @@
+code: en
+name: English
+source: builtin
+
+stopwords:
+  - which
+  - that
+  - this
+  - these
+  - those
+  - their
+  - such
+  - shall
+  - should
+  - must
+  - will
+  - would
+  - been
+  - being
+  - have
+  - has
+  - had
+  - are
+  - is
+  - was
+  - were
+  - not
+  - and
+  - or
+  - but
+  - for
+  - with
+  - from
+  - into
+  - under
+  - over
+  - upon
+  - within
+  - where
+  - when
+  - each
+  - other
+  - more
+  - also
+  - however
+  - system
+  - systems
+  - data
+  - case
+  - order
+  - relation
+  - accordance
+
+# „shall" i „should" jsou v EU dokumentech nosné — EIOPA opinion staví
+# supervizní očekávání skoro výhradně na „should".
+normative_patterns:
+  - 'shall\b'
+  - 'should\b'
+  - 'must\b'
+  - '\bis\s+required\s+to\b'
+  - '\bare\s+required\s+to\b'
+  - '\bneeds?\s+to\b'
+  - '\bis\s+obliged\s+to\b'
+  - '\bare\s+obliged\s+to\b'
+  - '\bmay\s+not\b'
+  - '\bis\s+prohibited\b'
+  - '\bhas\s+the\s+right\s+to\b'
+  - '\bhave\s+the\s+right\s+to\b'

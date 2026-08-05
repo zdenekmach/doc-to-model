@@ -1,0 +1,63 @@
+code: de
+name: Deutsch
+source: generated
+
+# POZOR: balíček vznikl za běhu, není ověřený člověkem. Report to hlásí,
+# aby se čísla z něj nedala splést s čísly z ověřeného balíčku.
+stopwords:
+  - der
+  - die
+  - das
+  - den
+  - dem
+  - des
+  - ein
+  - eine
+  - einer
+  - eines
+  - und
+  - oder
+  - aber
+  - nicht
+  - auch
+  - sich
+  - ist
+  - sind
+  - war
+  - waren
+  - werden
+  - wurde
+  - haben
+  - hat
+  - für
+  - mit
+  - von
+  - aus
+  - bei
+  - nach
+  - über
+  - unter
+  - durch
+  - diese
+  - dieser
+  - dieses
+  - welche
+  - System
+  - Systeme
+  - Daten
+  - Fall
+  - Rahmen
+
+normative_patterns:
+  - 'muss'
+  - 'müssen'
+  - 'darf\s+nicht'
+  - 'dürfen\s+nicht'
+  - 'soll'
+  - 'sollen'
+  - 'ist\s+verpflichtet'
+  - 'sind\s+verpflichtet'
+  - 'hat\s+das\s+Recht'
+  - 'haben\s+das\s+Recht'
+  - 'ist\s+untersagt'
+  - 'ist\s+erforderlich'

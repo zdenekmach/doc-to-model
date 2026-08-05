@@ -1,0 +1,80 @@
+code: cs
+name: čeština
+source: builtin
+
+# Slova bez rozlišovací síly. Kdyby se počítala, „opora" by vznikla i tam,
+# kde se jen potkaly spojky.
+stopwords:
+  - který
+  - která
+  - které
+  - kteří
+  - kterou
+  - kterých
+  - jejich
+  - svých
+  - tento
+  - tato
+  - toto
+  - této
+  - tohoto
+  - těchto
+  - podle
+  - musí
+  - může
+  - budou
+  - bude
+  - byla
+  - byly
+  - bylo
+  - jsou
+  - není
+  - nebo
+  - také
+  - však
+  - aby
+  - ale
+  - pro
+  - před
+  - přes
+  - při
+  - nad
+  - pod
+  - ode
+  - dne
+  - dnů
+  - všech
+  - každý
+  - každé
+  - další
+  - systém
+  - systému
+  - údaje
+  - údajů
+  - případě
+  - rámci
+  - vztahu
+
+# Značky normativní věty. Seznam je záměrně krátký a konzervativní: falešný
+# nález stojí čtenáře důvěru rychleji než přehlédnutá věta, kterou stejně
+# chytí metrika čísel.
+#
+# Všimni si asymetrie proti stopwords: „musí" je tam i tady. Pro měření opory
+# je to šum, pro měření pokrytí nejsilnější značka. Proto se normativní věty
+# hledají v syrovém textu, ne v kmenech.
+normative_patterns:
+  - 'mus[íi]'
+  - 'nesm[íěe]\w*'
+  - 'je\s+povin\w+'
+  - 'jsou\s+povin\w+'
+  - 'm[áa]\s+pr[áa]vo'
+  - 'maj[íi]\s+pr[áa]vo'
+  - 'je\s+opr[áa]vn\w+'
+  - 'vy[žz]aduj\w+'
+  - 'zajist[íi]'
+  - 'odpov[íi]d[áa]\s+za'
+  - 'nelze'
+  - 'je\s+nutn\w+'
+  - 'je\s+t[řr]eba'
+  - 'je\s+zak[áa]z\w+'
+  - 'se\s+\w{3,}(?:uje|uj[íi]|[áa]v[áa]|[áa]vaj[íi])'

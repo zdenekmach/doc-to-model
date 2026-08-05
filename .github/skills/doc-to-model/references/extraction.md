@@ -14,6 +14,15 @@ nedostatek modelu, to je nález o dokumentu.
 Pokušení je opačné: model vypadá lépe, když je vyplněný. Vyplněný model, který si domyslel
 polovinu, je ale horší než původní dokument, protože působí spolehlivěji.
 
+Tohle pravidlo ale hlídá jen jeden směr. Model, který **tvrdí míň než zdroj**, ho
+neporušuje ani trochu. Extrakce, která přečetla první kapitolu ze tří, je dokonale
+věrná — to málo, co vytáhla, je doložené, takže projde validací i kontrolou opory se
+samými jedničkami. Zapomenutá lhůta přitom stojí stejně jako lhůta vymyšlená.
+
+Věrnost je proto **podmínka nutná, ne postačující**. Druhá polovina postoje zní:
+z každého místa zdroje, které něco ukládá nebo tvrdí, musí v modelu něco být — nebo
+musí být zapsáno, proč tam nic není.
+
 ---
 
 ## Postup
@@ -69,6 +78,24 @@ Pole `basis` je **opora tvrzení podle zdroje** — o co se opírá (měření, 
 předpis, stanovisko). Když zdroj nic takového neuvádí, nech prázdné; je to nález,
 ne mezera k vyplnění.
 
+#### Rozlož tvrzení na čtveřici
+
+U tvrzení vyplň `subject`, `predicate`, `value` a `scope`. Je to **celek, ne
+výběr** — vynechaný `predicate` nebo `value` znamená, že tvrzení do kontroly
+rozporů vůbec nedojde. Není co s čím porovnat.
+
+| Věta ze zdroje | subject | predicate | value | scope |
+|----------------|---------|-----------|-------|-------|
+| „Anotace nese 612 lokusů miRNA." | anotace miRNA | počet lokusů | 612 | Ensembl Protists 59 |
+| „Hlášení se odesílá do 20. dne." | měsíční hlášení | lhůta odeslání | 20. den následujícího měsíce | JMHZ |
+
+Ta past je zákeřná v tom, že vyplněný `subject` vypadá jako hotová práce. Reálný
+případ: model se čtrnácti tvrzeními, všechna měla `subject` i `scope`, žádné
+`predicate` ani `value` — do kontroly rozporů se jich dostalo nula.
+
+`scope` chrání před falešným poplachem: 30 dnů u jednoho rozsahu a 90 u jiného
+není rozpor. Proto je povinný i tam, kde se zdá zřejmý.
+
 ### 4. Vytahuj tvrzení, ne odstavce
 Jeden požadavek = jedna ověřitelná věc. Když věta obsahuje dvě povinnosti, jsou to dva
 požadavky.
@@ -120,11 +147,25 @@ je při předání autorovi obvykle nejužitečnější částí celého výstup
 
 ---
 
-## Kontrola věrnosti
+## Dvě zpětné kontroly, každá v jiném směru
 
-Po extrakci projdi zpětně: vezmi tři náhodné požadavky z modelu a najdi je ve zdroji.
-Když je nenajdeš doslova ani jako zřejmý důsledek, extrakce si vymýšlí a je potřeba
-ji přepsat, ne opravit.
+Ruční verze se dá udělat na třech vzorcích a trvá minutu.
+
+**Model → zdroj.** Vezmi tři náhodné požadavky z modelu a najdi je ve zdroji. Když
+je nenajdeš doslova ani jako zřejmý důsledek, extrakce si vymýšlí a je potřeba ji
+přepsat, ne opravit.
+
+**Zdroj → model.** Otevři zdroj na třech náhodných místech, která něco ukládají nebo
+tvrdí, a najdi je v modelu. Když je nenajdeš, extrakce je mělká — a to je ta chyba,
+kterou první kontrola nikdy neukáže.
+
+Skriptovanou podobu obou má pipeline: `ground_check.py` v prvním směru,
+`coverage_check.py` ve druhém. Osiřelá čísla z kontroly pokrytí stojí za pohled
+vždycky, protože lhůta a částka jsou to nejdražší, co se dá při extrakci ztratit.
 
 Pak spusť validaci a report děr. Když report nenašel nic, je to podezřelé — reálné
 dokumenty díry mají.
+
+Nepokryté místo se buď doextrahuje, nebo se vědomě odepíše přes `coverage_waivers`
+s důvodem. Sto procent pokrytí není cíl: kdyby se honilo číslo, extrakce si začne
+vymýšlet požadavky, aby ho nasytila — a je zpátky na začátku téhle stránky.

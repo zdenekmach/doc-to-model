@@ -1,4 +1,5 @@
 .venv/
+venv/
 __pycache__/
 *.pyc
 .DS_Store
@@ -11,6 +12,9 @@ __pycache__/
 inputs/
 
 # Projekce se neverzují — regenerují se. Je to celá pointa tohohle repozitáře.
-# `bash scripts/build.sh <model.yaml>` je vyrobí znovu za pár sekund.
+# `bash build.sh <model.yaml>` je vyrobí znovu za pár sekund.
+out/
 model/*/out/
+model/*/outputs/
 model/*/*-opora.md
+model/*/*-pokryti.md

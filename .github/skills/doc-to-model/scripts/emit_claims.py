@@ -106,9 +106,25 @@ def main():
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
 
-    print(f"[OK] tvrzení pro kontrolu rozporů: {args.out} ({len(usable)} z {len(all_claims)})")
-    for cid, missing in skipped:
+    # Prázdný soubor není v pořádku, i když vznikl bez chyby. Kontrola rozporů
+    # nad ním doběhne, nenajde nic a bude vypadat čistě — tichý úspěch, který
+    # znamená opak. Proto se nula hlásí jinou nálepkou než částečný výsledek.
+    tag = "[POZOR]" if all_claims and not usable else "[OK]"
+    print(f"{tag} tvrzení pro kontrolu rozporů: {args.out} "
+          f"({len(usable)} z {len(all_claims)})")
+
+    for cid, missing in skipped[:5]:
         print(f"  [přeskočeno] {cid}: chybí {', '.join(missing)}")
+    if len(skipped) > 5:
+        print(f"  … a dalších {len(skipped) - 5} tvrzení")
+
+    if all_claims and not usable:
+        chybi = sorted({k for _, ms in skipped for k in ms})
+        print(f"  Do kontroly rozporů nedošlo ANI JEDNO z {len(all_claims)} tvrzení — "
+              f"nejčastěji chybí: {', '.join(chybi)}.")
+        print("  Kontrola nad prázdným souborem nenajde nic a bude vypadat čistě.")
+        print("  Čtveřice subject · predicate · value · scope je celek, ne výběr "
+              "(viz references/extraction.md).")
     return 0
 
 
