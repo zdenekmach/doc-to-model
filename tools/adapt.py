@@ -74,6 +74,13 @@ SUBSTITUTIONS: list[tuple[str, str, str, str]] = [
         "SKILL.md → příkaz build.sh",
     ),
     (
+        # V publikovaném repu je v kořeni zkratka, takže cesta ke skillu odpadá.
+        "SKILL.md",
+        "bash .claude/plugins/research/skills/doc-to-model/scripts/rebuild.sh model.yaml",
+        "bash rebuild.sh model.yaml",
+        "SKILL.md → příkaz rebuild.sh",
+    ),
+    (
         "SKILL.md",
         "| `templates/model-skeleton.yaml` | Kostra instance k vyplnění |",
         "| `scripts/validate/` | Validátor (L1 linkml-validate, L2 referenční) — vendorovaný, ne systémový |\n"

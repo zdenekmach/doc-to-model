@@ -155,6 +155,16 @@ bash build.sh model/<jméno>/model.yaml out inputs/zdroj.txt
 Projde validací, oběma kontrolami a vygeneruje všechny projekce. Bez třetího
 argumentu se kontroly přeskočí a emitory to vypíšou jako varování.
 
+Když jde jen o přegenerování hotového modelu, stačí model:
+
+```bash
+bash rebuild.sh model/<jméno>/model.yaml
+```
+
+Zdroj si vezme ze `source_path` v modelu, výstupy dá do `<model>/out`. Proto
+stojí za to verzovat jen `model.yaml` a zdrojový text — zbytek se vyrobí znovu
+a vyjde bajtově stejně (Word až na časové razítko v ZIP obalu).
+
 Jednotlivé kroky umí `--help`:
 
 ```bash
@@ -178,7 +188,7 @@ Repozitář má **dvě části a záměrně je nemíchá**.
 
 .claude/skills/doc-to-model    symlink na výše — jedno místo, dvě cesty
 
-AGENTS.md · README.md · build.sh · requirements.txt · utils/ · tools/
+AGENTS.md · README.md · build.sh · rebuild.sh · requirements.txt · utils/ · tools/
                                ← VLASTNÍ, tady se udržují
 ```
 

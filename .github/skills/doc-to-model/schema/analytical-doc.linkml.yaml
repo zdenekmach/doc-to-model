@@ -84,7 +84,15 @@ classes:
       author:
       date:
       source_document:
-        description: Odkud instance vznikla — cesta nebo název původního dokumentu.
+        description: Odkud instance vznikla — název původního dokumentu, pro člověka.
+      source_path:
+        description: >-
+          Cesta ke zdrojovému textu, **relativně k tomuto souboru modelu**.
+          Drží se odděleně od `source_document`, protože ten je volný text
+          („extract of X.pdf, 17 pages") a vytahovat z něj cestu řetězcově by
+          bylo hádání. Díky téhle cestě umí `rebuild.sh` přegenerovat všechny
+          projekce jen z modelu. Relativně k modelu, ne ke kořeni repozitáře,
+          aby model přežil přesun i mezi systémy.
       regulations:
         multivalued: true
         description: Předpisy, ze kterých požadavky plynou.

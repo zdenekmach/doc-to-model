@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.16.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.17.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -85,6 +85,7 @@ python3 scripts/segment.py --source inputs/zdroj.txt --out /tmp/sources.yaml
 
 # 3. EXTRACT — TADY PÍŠEŠ MODEL TY. Žádný skript to neudělá.
 #    Vznikne <cíl>/model.yaml: sources + requirements + claims proti schématu.
+#    Do hlavičky patří `source_path` — cesta ke zdroji relativně k modelu.
 
 # 4.–7. Zbytek jedním příkazem, až model EXISTUJE a něco obsahuje
 bash scripts/build.sh <cíl>/model.yaml <cíl>/out inputs/zdroj.txt
@@ -417,6 +418,26 @@ bash scripts/build.sh model.yaml [out_dir] [zdroj.txt]
 
 Validace běží první a při chybě se render nespustí.
 
+#### Přegenerování hotového modelu
+
+Když model už existuje a jde jen o to vyrobit projekce znovu, stačí obálka:
+
+```bash
+bash rebuild.sh model.yaml
+```
+
+Zdroj si vezme ze `source_path` v modelu, výstupy dá do `<model>/out`. Model ví,
+odkud vznikl — není důvod to psát podruhé do příkazu.
+
+Kvůli tomu je `source_path` **oddělené od `source_document`**. Ten druhý je pro
+člověka a bývá v něm věta („extract of X.pdf, 17 pages"); vytahovat z něj cestu
+řetězcově by bylo hádání. Cesta se počítá **od souboru modelu**, ne od kořene
+repozitáře, aby model přežil přesun i mezi systémy.
+
+Verzovat proto stačí `model.yaml` a zdrojový text. Zbytek je projekce — ověřeno
+porovnáním: přegenerování z holého modelu dá bajtově tytéž artefakty, až na
+časové razítko v ZIP obalu Wordu.
+
 | Emitor | Výstup | K čemu |
 |--------|--------|--------|
 | `emit_word.py` | `.docx` | dokument pro člověka, sekce jen ty, které model má |
@@ -610,6 +631,7 @@ než dokonalý zdroj.
 | `scripts/sourcemap.py` | Locator → řádky; sdílí prohlížeč i kontrola opory |
 | `scripts/lang.py` · `lang/*.yaml` | Jazykové balíčky — stopwordy, normativní značky a popisky Wordu jako data |
 | `scripts/build.sh` | Zkratka pro kroky 4–7 (validace → opora → pokrytí → projekce) |
+| `scripts/rebuild.sh` | Totéž jen z modelu — cesty si vezme ze `source_path` |
 | `scripts/emit_word.py` · `emit_drawio.py` · `emit_context.py` · `emit_viewer.py` · `emit_claims.py` | Emitory |
 | `references/extraction.md` | Jak extrahovat věrně (pravidla, příklady, pasti) |
 | `scripts/validate/` | Validátor (L1 linkml-validate, L2 referenční) — vendorovaný, ne systémový |
