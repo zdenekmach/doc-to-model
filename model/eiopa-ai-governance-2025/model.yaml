@@ -1,4 +1,16 @@
-# Návrh zdrojových míst — zkráceno na ta, na která bude model odkazovat.
+# Minimal model instance generated as input for build.sh
+id: DOC-EIOPA-2025
+title: "EIOPA Opinion on AI Governance — extracted model (minimal)"
+version: "1.0.0"
+status: Draft
+author: ""
+date: "2025-07-01"
+source_document: "/Users/zdenekmachacek/Projects/PersonalSkills/11-Client-Projects/generali-beanz/inputs/eiopa-ai-governance-2025.txt"
+
+context: >
+  Minimal instance created for automated pipeline run. Only selected sources are
+  included; content (requirements/claims) left intentionally minimal for validation.
+
 sources:
   - id: S3
     title: 'The European Insurance and Occupational Pensions Authority (EIOPA) pro'
@@ -36,3 +48,9 @@ sources:
   - id: S40
     title: 'Sound data governance should be applied throughout the AI system life '
     locator: '3.20. Sound data governance should be applied throughout the AI system'
+
+# Intentionally minimal: no requirements/claims yet — EXTRACT LLM must fill these.
+requirements: []
+claims: []
+open_questions: []
+coverage_waivers: []

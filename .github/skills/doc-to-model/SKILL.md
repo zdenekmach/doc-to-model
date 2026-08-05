@@ -6,7 +6,7 @@ description: "Triggers: /doc-to-model, 'udělej ze specifikace strukturovanou pr
 
 # Doc → Model — z hotového dokumentu strukturovaná pravda
 
-**Verze:** 1.11.0 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
+**Verze:** 1.11.1 | **Pattern:** INGEST → SEGMENT → EXTRACT → VALIDATE → GROUND-CHECK → COVERAGE → PROJECT (substrát strukturované pravdy)
 
 Chybějící vstupní operace substrátu. `domain-model` plní instanci z **researche**,
 `data-metamodel` navrhuje **schéma**. Tenhle skill plní instanci z **jednoho konkrétního
@@ -45,7 +45,7 @@ a nad neověřeným nebo mezitím změněným modelem odmítne běžet. Druhý o
 0. VSTUP        → dokument + cíl                          člověk
 1. INGEST       → dokument → text se záchytnými body      skript
 2. SEGMENT      → návrh zdrojových míst (`sources`)       skript
-3. EXTRACT      → instance proti schématu, s citacemi     Claude Code ←──┐
+3. EXTRACT      → instance proti schématu, s citacemi     TY (agent)  ←──┐
 4. VALIDATE     → struktura + reference                   skript · BRÁNA │
 5. GROUND-CHECK → má výrok oporu v citovaném místě        skript · BRÁNA │
 6. COVERAGE     → promítl se zdroj do modelu              skript ────────┘
@@ -89,6 +89,17 @@ Zastav se jen ve třech případech:
 
 Ostatní rozhodnutí uděláš sám. Zkrácení `sources` na místa, na která budeš
 opravdu odkazovat, patří mezi ně — je to úsudek, ne dotaz.
+
+<gate severity="BLOCKER">
+**Krok 3 EXTRACT nesmíš přeskočit ani delegovat.** Bez něj vznikne model bez
+jediného požadavku a tvrzení — a řetěz za ním doběhne, protože validovat a
+promítat se dá i prázdno. Vypadne Word bez obsahu a pokrytí kolem patnácti
+procent, což vypadá jako výsledek, ale výsledek to není.
+
+Reálně se to stalo: agent přečetl v tomhle kroku větu o tom, kdo extrakci dělá,
+usoudil, že na ni nemá nárok, a přeskočil ji. Extrakce je tvoje práce, ať v téhle
+session běží kterýkoli model.
+</gate>
 
 Když člověk výslovně řekne, že chce po některém kroku zastavit, poslechni.
 Výchozí stav je ale průběh bez přerušení.
@@ -153,8 +164,10 @@ zakotveného místa, takže sourozenci se nepřelijí do sebe.
 
 ### 3. EXTRACT — naplnění instance
 
-**Tohle dělá Claude Code, ne skript.** Extrakce je LLM operace a běží přes subscription,
-ne přes API-klíč.
+**Tohle děláš ty, ne skript.** Extrakce je jediný krok řetězu, který nejde
+naprogramovat — čte se dokument a rozhoduje se, co je v něm požadavek a co
+tvrzení. Nedeleguj ji nikam ven a nevolej kvůli ní žádné API; probíhá v téhle
+session, ať v ní běží kterýkoli model.
 
 Schéma: `schema/analytical-doc.linkml.yaml`. Vyplň jen sekce, které zdroj opravdu
 obsahuje — prázdná sekce je poctivější než vymyšlená.
