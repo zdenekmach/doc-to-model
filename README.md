@@ -28,18 +28,56 @@ opory se samými jedničkami, protože to málo, co vytáhla, je doložené.
 
 ## Instalace
 
-Potřebuješ Python 3.11+.
+Potřeba je **Python 3.11 nebo novější** a pět balíčků z `requirements.txt`.
+Zkratka přes celý řetěz (`build.sh`) je navíc bashový skript — na Windows tedy
+Git Bash nebo WSL, nativní `cmd` ani PowerShell ho nespustí.
+
+Nejdřív si ověř, jestli něco instalovat vůbec musíš:
 
 ```bash
+python3 -c "import yaml, docx, pypdf, linkml_runtime" && which linkml-validate
+```
+
+Když oba příkazy projdou, máš hotovo a zbytek téhle sekce přeskoč.
+
+### macOS
+
+Python 3.11+ bývá po ruce; když ne, `brew install python@3.12` nebo instalátor
+z python.org.
+
+```bash
+git clone https://github.com/zdenekmach/doc-to-model.git
+cd doc-to-model
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Ověř, že je `linkml-validate` v PATH — bez něj se strukturální validace přeskočí
-a řekne to nahlas:
+### Windows
+
+Python z python.org nebo z Microsoft Store; při instalaci nech zaškrtnuté
+**Add python.exe to PATH**. Git Bash přijde s [Git for Windows](https://gitforwindows.org).
+
+V Git Bash:
 
 ```bash
-linkml-validate --help
+git clone https://github.com/zdenekmach/doc-to-model.git
+cd doc-to-model
+python -m venv .venv && source .venv/Scripts/activate
+pip install -r requirements.txt
 ```
+
+Pozor na dva rozdíly proti macOS: příkaz je `python`, ne `python3`, a aktivace
+vede přes `Scripts`, ne `bin`.
+
+### Ověření
+
+```bash
+linkml-validate --help     # strukturální validace; bez něj se přeskočí a řekne to nahlas
+python3 -m pytest .github/skills/doc-to-model/scripts/ -q    # 16 testů; potřebuje pytest
+```
+
+Virtuální prostředí je doporučení, ne podmínka. Když balíčky nainstaluješ
+globálně, funguje to taky — `.venv` jen drží verze stranou od zbytku systému.
 
 ## Spuštění z GitHub Copilot CLI
 
